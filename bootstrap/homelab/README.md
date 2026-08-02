@@ -15,6 +15,9 @@ Non-production helpers for:
 | `configure-k3s-registry-trust.sh` | Operator workstation | Copy CA + `registries.yaml` to K3s |
 | `build-push-ai-doc-assistant.sh` | Operator workstation | Build/push `git-<sha>` image |
 | `verify-registry-pull.sh` | Operator workstation | Prove K3s can pull |
+| `apply-ai-doc-assistant-application.sh` | Operator workstation | Apply durable Argo Application with immutable tag |
+| `bootstrap-ai-doc-assistant-homelab.sh` | Operator workstation | End-to-end registry → trust → push → apply |
+| `verify-ai-doc-assistant-homelab.sh` | Operator workstation | Resilience: Argo, restart, self-heal scale, probes, NetworkPolicy, secrets scan |
 
 ## Safety
 

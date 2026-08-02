@@ -101,14 +101,20 @@ networkPolicy:
   policyTypes:
     - Ingress
     - Egress
+  # Ingress allowlist only (kube-router on this K3s node):
+  #   - ingress-nginx (edge HTTP)
+  #   - same-namespace pods labeled solo.empire/probe=true (in-cluster checks)
+  # Empty podSelector:{} and full-CIDR ipBlock 10.42.0.0/16 are intentionally
+  # avoided: the former has been unreliable here; the latter allows every
+  # namespace and breaks cross-namespace deny.
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
-        - podSelector: {}
-        - ipBlock:
-            cidr: 10.42.0.0/16
+        - podSelector:
+            matchLabels:
+              solo.empire/probe: "true"
       ports:
         - protocol: TCP
           port: 8000
