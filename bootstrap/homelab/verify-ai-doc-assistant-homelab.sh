@@ -547,7 +547,7 @@ kc -n argocd patch application "$ARGO_APP" --type merge -p '{
   }
 }' >/dev/null 2>&1 || true
 ok "Argo selfHeal re-enabled after NetworkPolicy test"
-note "NOTE: until tight NetworkPolicy is on Git main, selfHeal may re-open pod-CIDR allow from remote desired state"
+note "tight NetworkPolicy is tracked in Git desired state; Argo selfHeal restored normal operation"
 
 # ---------------------------------------------------------------------------
 log ""
