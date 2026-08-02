@@ -18,6 +18,10 @@ Non-production helpers for:
 | `apply-ai-doc-assistant-application.sh` | Operator workstation | Apply durable Argo Application with immutable tag |
 | `bootstrap-ai-doc-assistant-homelab.sh` | Operator workstation | End-to-end registry → trust → push → apply |
 | `verify-ai-doc-assistant-homelab.sh` | Operator workstation | Resilience: Argo, restart, self-heal scale, probes, NetworkPolicy, secrets scan |
+| `build-push-booknbook.sh` | Operator workstation | Build/push immutable booknbook image |
+| `apply-booknbook-application.sh` | Operator workstation | Apply booknbook Argo Application |
+| `smoke-booknbook-homelab.sh` | Operator workstation | Locale, probes, static asset, Argo smoke checks |
+| `verify-homelab-platform.sh` | Operator workstation | Read-only two-app status, resources, ingress, metrics baseline |
 
 ## Safety
 
