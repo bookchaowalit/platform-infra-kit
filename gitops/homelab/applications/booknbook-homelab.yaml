@@ -1,0 +1,47 @@
+# Argo CD Application: booknbook on Homelab K3s (non-production).
+# Durable GitHub-backed source only. Never file://.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: booknbook-homelab
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: booknbook
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: booknbook
+    solo.empire/environment: homelab
+    solo.empire/team: product
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: solo-empire-apps
+  source:
+    repoURL: git@github.com:bookchaowalit/solo-empire.git
+    targetRevision: main
+    path: infra/platform/helm/solo-app
+    helm:
+      releaseName: booknbook
+      valueFiles:
+        - homelab/booknbook.yaml
+      parameters:
+        - name: image.repository
+          value: registry.homelab.local:5000/solo-empire/booknbook
+        - name: image.tag
+          value: git-7f3c6b8ad8973aae572611d74b7d5ba6652399e2
+        - name: image.pullPolicy
+          value: IfNotPresent
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps-booknbook-homelab
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 1m

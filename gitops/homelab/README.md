@@ -1,6 +1,6 @@
 # Homelab GitOps
 
-Private-LAN K3s GitOps sources. Synthetic workloads only.
+Private-LAN K3s GitOps sources for non-production portfolio workloads.
 
 ## Layout
 
@@ -8,13 +8,15 @@ Private-LAN K3s GitOps sources. Synthetic workloads only.
 |------|---------|
 | `platform-smoke/` | Synthetic HTTP smoke app (Namespace, ConfigMap, Deployment, Service, Ingress) |
 | `applications/platform-smoke-homelab.yaml` | Argo CD Application (apply once; then Argo owns the workload) |
+| `applications/ai-doc-assistant-homelab.yaml` | GitHub-backed AI document app Application |
+| `applications/booknbook-homelab.yaml` | GitHub-backed Next.js portfolio app Application |
 | `argocd/solo-empire-apps-project.yaml` | AppProject destinations including `platform-smoke` |
 
 ## Boundary
 
-- No business applications
+- Business applications are homelab portfolio deployments only; no customer data
 - No secrets, databases, PVs, or customer data
-- Private ingress host only: `platform-smoke.local`
+- Private ingress hosts only: `platform-smoke.local`, `ai-doc-assistant.homelab.local`, `booknbook.homelab.local`
 - Staging and production ApplicationSets are not enabled here
 
 ## Repository access (durable)
