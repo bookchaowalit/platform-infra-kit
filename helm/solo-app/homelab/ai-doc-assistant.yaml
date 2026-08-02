@@ -1,0 +1,157 @@
+# Homelab values for ai-doc-assistant (non-production).
+# Image repository/tag are set to immutable Git-SHA tags from the private
+# Fedora registry. No secrets in Git. Health/ready work without OPENAI_API_KEY.
+
+nameOverride: ai-doc-assistant
+fullnameOverride: ai-doc-assistant
+
+app:
+  name: ai-doc-assistant
+  team: product
+  environment: homelab
+  region: private-lan
+  component: api
+  partOf: solo-empire
+
+mode: web
+
+image:
+  # Placeholder tag replaced/updated when a new immutable SHA is published.
+  repository: registry.homelab.local:5000/solo-empire/ai-doc-assistant
+  tag: "git-pending"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: ai-doc-assistant.homelab.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+configMap:
+  enabled: true
+  data:
+    APP_ENV: homelab
+    LOG_LEVEL: info
+    # Chroma uses emptyDir (ephemeral demo vector store only).
+
+# Secrets stay outside Git (ESO/manual Secret). Health does not need OpenAI.
+externalSecrets:
+  enabled: false
+
+envFromSecrets: []
+
+env: []
+
+# Sized for the single-node 4 GiB Homelab control plane.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector: {}
+        - ipBlock:
+            cidr: 10.42.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.0/16
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - ports:
+        - protocol: TCP
+          port: 443
+
+topologySpreadConstraints:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: uploads
+    mountPath: /app/uploads
+  - name: chroma
+    mountPath: /app/chroma-data
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+  - name: uploads
+    emptyDir: {}
+  - name: chroma
+    emptyDir: {}

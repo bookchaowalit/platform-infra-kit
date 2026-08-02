@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: approved-registries
+  annotations:
+    policies.kyverno.io/title: Approved container registries
+    policies.kyverno.io/category: Supply Chain
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Restrict images to approved registries. Update the allow-list when the
+      private registry hostname is known.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+      validate:
+        message: >
+          Image registry is not in the approved list
+          (ghcr.io, registry.homelab.local:5000, registry.example.local,
+          public.ecr.aws, gcr.io).
+        foreach:
+          - list: "request.object.spec.containers"
+            pattern:
+              image: "ghcr.io/* | registry.homelab.local:5000/* | 192.168.152.12:5000/* | registry.example.local/* | public.ecr.aws/* | gcr.io/*"
+          - list: "request.object.spec.initContainers || []"
+            pattern:
+              image: "ghcr.io/* | registry.homelab.local:5000/* | 192.168.152.12:5000/* | registry.example.local/* | public.ecr.aws/* | gcr.io/*"
