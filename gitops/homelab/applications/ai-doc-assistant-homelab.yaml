@@ -29,7 +29,7 @@ spec:
         - name: image.repository
           value: registry.homelab.local:5000/solo-empire/ai-doc-assistant
         - name: image.tag
-          value: git-pending
+          value: git-3bd4563ffef9eae6c56f388e77da1456f4725dda
         - name: image.pullPolicy
           value: IfNotPresent
   destination:

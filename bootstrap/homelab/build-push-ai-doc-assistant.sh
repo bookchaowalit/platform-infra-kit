@@ -8,7 +8,11 @@ APP_DIR="${ROOT}/projects/internal/solo-empire/ai-doc-assistant"
 REGISTRY_HOST="${REGISTRY_HOST:-registry.homelab.local}"
 REGISTRY_PORT="${REGISTRY_PORT:-5000}"
 IMAGE_NAME="${IMAGE_NAME:-solo-empire/ai-doc-assistant}"
-GIT_SHA="${GIT_SHA:-$(git -C "${ROOT}" rev-parse HEAD)}"
+if [[ -z "${GIT_SHA:-}" ]]; then
+  # The application is a separate nested repository. Use its commit so the
+  # immutable image tag identifies the source that was actually built.
+  GIT_SHA="$(git -C "${APP_DIR}" rev-parse HEAD 2>/dev/null || git -C "${ROOT}" rev-parse HEAD)"
+fi
 TAG="git-${GIT_SHA}"
 FULL_IMAGE="${REGISTRY_HOST}:${REGISTRY_PORT}/${IMAGE_NAME}:${TAG}"
 
