@@ -1,0 +1,15 @@
+apiVersion: v2
+name: solo-app
+description: >
+  Reusable Solo Empire application chart. Deploy many applications by changing
+  values only (image, resources, ingress, secrets, autoscaling).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - solo-empire
+  - application
+  - gitops
+maintainers:
+  - name: Solo Empire Platform
+home: https://github.com/bookchaowalit/solo-empire

@@ -1,0 +1,21 @@
+{{- if and .Values.service.enabled (ne .Values.mode "worker") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "solo-app.fullname" . }}
+  labels:
+    {{- include "solo-app.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "solo-app.selectorLabels" . | nindent 4 }}
+{{- end }}

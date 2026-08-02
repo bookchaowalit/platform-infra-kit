@@ -1,0 +1,12 @@
+solo-app release {{ .Release.Name }} rendered for:
+  environment: {{ .Values.app.environment }}
+  region:      {{ .Values.app.region }}
+  team:        {{ .Values.app.team }}
+  mode:        {{ .Values.mode }}
+  image:       {{ include "solo-app.image" . }}
+
+This chart is designed for GitOps. Prefer Argo CD ApplicationSets over manual
+`helm upgrade` against production clusters.
+
+Secrets must come from External Secrets or sealed/SOPS workflows — never from
+committed values files.

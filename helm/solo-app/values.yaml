@@ -1,0 +1,256 @@
+# Default values for solo-app.
+# Override per application / environment / region via GitOps values files.
+# Do not put real credentials or real production domains here.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Standard labels (merged into all resources)
+# Required by policy: app.kubernetes.io/name, team, environment
+app:
+  name: ""
+  team: platform
+  environment: dev
+  region: local
+  partOf: solo-empire
+  component: web
+
+# Workload mode: "web" (Deployment + Service + optional Ingress) or "worker"
+mode: web
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/example/solo-app
+  # Prefer digest in production; tag must not be "latest"
+  tag: "0.1.0"
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automount: false
+
+podAnnotations: {}
+podLabels: {}
+
+# Non-root security context (enforced by Kyverno policy)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  annotations: {}
+
+# Ingress (classic). Disable when using Gateway API.
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: app.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # - secretName: app-tls
+  #   hosts:
+  #     - app.example.local
+
+# Gateway API (optional alternative to Ingress)
+gateway:
+  enabled: false
+  parentRefs: []
+  # - name: solo-gateway
+  #   namespace: gateway-system
+  hostnames:
+    - app.example.local
+  path: /
+  pathType: PathPrefix
+
+# Non-secret configuration
+configMap:
+  enabled: true
+  data: {}
+  # LOG_LEVEL: info
+  # APP_ENV: dev
+
+# Environment variables from ConfigMap / static values (no secrets)
+env: []
+# - name: LOG_LEVEL
+#   value: info
+
+# External Secrets Operator references (never embed secret values).
+# When enabled=true the chart automatically:
+#   1) creates ExternalSecret with target.name = solo-app.externalSecretName
+#   2) mounts that Secret on the Pod via envFrom.secretRef
+# Leave targetSecretName empty to use "<fullname>-secrets".
+externalSecrets:
+  enabled: false
+  refreshInterval: 1h
+  secretStoreRef:
+    name: cluster-secret-store
+    kind: ClusterSecretStore
+  targetSecretName: ""
+  data: []
+  # - secretKey: DATABASE_URL
+  #   remoteRef:
+  #     key: apps/example-api
+  #     property: database-url
+
+# Additional Secret mounts (beyond the auto-wired ExternalSecret).
+# Do NOT re-list the ExternalSecret target here — it is mounted automatically.
+envFromSecrets: []
+# - secretRef:
+#     name: some-other-shared-secret
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+# Horizontal Pod Autoscaler (CPU/memory)
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: null
+
+# Optional KEDA ScaledObject (event-driven)
+keda:
+  enabled: false
+  minReplicaCount: 0
+  maxReplicaCount: 20
+  pollingInterval: 30
+  cooldownPeriod: 300
+  triggers: []
+  # - type: prometheus
+  #   metadata:
+  #     serverAddress: http://prometheus.monitoring.svc:9090
+  #     metricName: http_requests_per_second
+  #     threshold: "100"
+  #     query: sum(rate(http_requests_total{app="example"}[2m]))
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5432
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra volume mounts for writable paths when root FS is read-only
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: cache
+    mountPath: /app/cache
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+  - name: cache
+    emptyDir: {}
+
+# Optional Prometheus Operator ServiceMonitor
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  labels: {}
+  # release: kube-prometheus-stack
+
+# Worker-mode extras (ignored when mode=web unless set)
+worker:
+  command: []
+  # - /app/worker
+  args: []
