@@ -1,0 +1,229 @@
+# Staging-ready values for ai-doc-assistant.
+# STAGING DEPLOYMENT IS DISABLED BY DEFAULT.
+# Do not apply to a cluster, do not register an Argo Application for staging,
+# and do not put real secrets or production hostnames here.
+#
+# Durable data plane is OUTSIDE this chart (Postgres, vector, S3). See:
+#   docs/operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md
+#   docs/operations/STAGING-DATA-BACKUP-RESTORE.md
+#   infra/platform/DATA-CONTRACT.md
+#
+# Enable only after ENVIRONMENT-CONTRACT gates pass, data plane is provisioned,
+# restore drill logged, and a human flips soloEmpire.deploymentEnabled.
+
+soloEmpire:
+  # Platform gate consumed by validate-onboarding / CI (not a Helm chart toggle).
+  deploymentEnabled: false
+  environment: staging
+  # Named contract: planned durable staging; not live until provision + enable.
+  dataContract: staging-durable-planned
+  # Staging data targets (references / intent only — no live endpoints here)
+  data:
+    mode: durable-planned
+    postgresql: managed-or-private-vps-placeholder
+    # Prefer pgvector-on-managed-postgres for early staging cost; Qdrant optional.
+    vectorStore: pgvector-on-managed-postgres-or-managed-qdrant-placeholder
+    objectStorage: s3-compatible-managed-placeholder
+    chromaEmptyDirAllowed: false
+    uploadsEmptyDirAllowed: false
+    minioInClusterAllowed: false
+    backupRestoreDoc: docs/operations/STAGING-DATA-BACKUP-RESTORE.md
+    # Homelab remains DEMO_ONLY; never copy emptyDir chroma into staging.
+    homelabDemoOnly: true
+
+nameOverride: ai-doc-assistant
+fullnameOverride: ai-doc-assistant
+
+app:
+  name: ai-doc-assistant
+  team: product
+  environment: staging
+  region: ap-southeast-1
+  component: api
+  partOf: solo-empire
+
+mode: web
+
+image:
+  # Staging registry is a design target; tag must stay immutable (never :latest).
+  # Replace repository when a shared registry exists; keep git-<sha> or digest.
+  # git-pending is allowed ONLY while deploymentEnabled is false.
+  repository: registry.example.local/solo-empire/ai-doc-assistant
+  tag: "git-pending"
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    # Placeholder issuer only — no real cert-manager ClusterIssuer provisioned.
+    cert-manager.io/cluster-issuer: "letsencrypt-staging-placeholder"
+  hosts:
+    - host: ai-doc-assistant.staging.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ai-doc-assistant-staging-tls-placeholder
+      hosts:
+        - ai-doc-assistant.staging.example.local
+
+configMap:
+  enabled: true
+  data:
+    APP_ENV: staging
+    LOG_LEVEL: info
+    SOLO_DATA_CONTRACT: staging-durable-planned
+    SOLO_DATA_DURABILITY: durable-planned
+    # Placeholders — real endpoints come from ExternalSecret / runtime config.
+    SOLO_VECTOR_STORE: external-managed
+    SOLO_OBJECT_STORAGE: s3-compatible-external
+    # No emptyDir Chroma in staging.
+    SOLO_CHROMA_EMPTYDIR: "false"
+    # VECTOR_STORE_URL / S3_* never committed with real credentials.
+
+# Secrets: External Secrets only. No values, no .env in Git.
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: cluster-secret-store
+    kind: ClusterSecretStore
+  data:
+    # Remote keys are path references only (dummy names).
+    - secretKey: OPENAI_API_KEY
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: openai-api-key
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: database-url
+    - secretKey: VECTOR_STORE_URL
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: vector-store-url
+    - secretKey: VECTOR_STORE_API_KEY
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: vector-store-api-key
+    - secretKey: S3_ENDPOINT
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: s3-endpoint
+    - secretKey: S3_BUCKET
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: s3-bucket
+    - secretKey: S3_ACCESS_KEY_ID
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: s3-access-key-id
+    - secretKey: S3_SECRET_ACCESS_KEY
+      remoteRef:
+        key: apps/ai-doc-assistant/staging
+        property: s3-secret-access-key
+
+envFromSecrets: []
+env: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 36
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Managed DB / vector / object endpoints: allow only after CIDR/FQDN policy
+    # is known. Do not open unrestricted egress in a real staging enablement PR.
+
+topologySpreadConstraints:
+  enabled: true
+  whenUnsatisfiable: ScheduleAnyway
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+
+# Staging durable data plane is external.
+# Only disposable /tmp may use emptyDir. No chroma volume. No durable uploads
+# emptyDir (uploads go to S3-compatible object storage).
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
