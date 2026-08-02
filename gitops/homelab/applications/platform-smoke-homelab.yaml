@@ -18,13 +18,9 @@ metadata:
 spec:
   project: solo-empire-apps
   source:
-    # Canonical durable remote (private repo): requires a read-only deploy key
-    # (or equivalent) registered in Argo CD AND this path present on main.
-    # Live homelab bootstrap currently overrides repoURL to:
-    #   file:///workspace/solo-empire
-    # via a node-local snapshot mounted into argocd-repo-server. Same path and
-    # targetRevision. Never commit credentials.
-    repoURL: https://github.com/bookchaowalit/solo-empire.git
+    # Durable private-repo source via SSH + read-only deploy key registered in
+    # Argo CD out of band (never commit credentials).
+    repoURL: git@github.com:bookchaowalit/solo-empire.git
     targetRevision: main
     path: infra/platform/gitops/homelab/platform-smoke
   destination:

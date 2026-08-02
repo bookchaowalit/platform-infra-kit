@@ -17,32 +17,20 @@ Private-LAN K3s GitOps sources. Synthetic workloads only.
 - Private ingress host only: `platform-smoke.local`
 - Staging and production ApplicationSets are not enabled here
 
-## Repository access
+## Repository access (durable)
 
-The monorepo `bookchaowalit/solo-empire` is private. Durable remote GitOps needs:
-
-1. a **read-only deploy key** registered in Argo CD as a repository credential, or
-2. another read-only repository credential (HTTPS token / GitHub App)
-
-and the path must exist on branch `main`.
-
-Do not commit credentials. Do not paste private keys or tokens into chat.
-
-### Lab bootstrap (current live path)
-
-Until remote access + push are available, the homelab node uses:
+The monorepo `bookchaowalit/solo-empire` is private. Homelab Argo CD uses:
 
 | Item | Value |
 |------|-------|
-| Host git worktree | `/var/lib/solo-empire-homelab-git/solo-empire` |
-| Argo `repoURL` | `file:///workspace/solo-empire` |
-| Mount | hostPath on `argocd-repo-server` → `/workspace/solo-empire` |
-| Repo secret | `solo-empire-homelab-file-repo` (cluster-local only) |
+| `repoURL` | `git@github.com:bookchaowalit/solo-empire.git` |
+| Credential | read-only deploy key in cluster secret `repo-solo-empire-github` |
+| Branch | `main` |
 | Application | `platform-smoke-homelab` → Synced / Healthy |
-| Self-heal | Verified for scale and owned-label mutations |
 
-Refresh the lab snapshot after editing manifests under `platform-smoke/`, then
-let Argo reconcile (do not repeatedly `kubectl apply` workload objects).
+Do not commit credentials. Do not paste private keys or tokens into chat.
+Change desired state in Git and let Argo sync; do not repeatedly
+`kubectl apply` workload objects.
 
 ## Apply order (operator)
 
