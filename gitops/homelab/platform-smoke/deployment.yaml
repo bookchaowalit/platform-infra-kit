@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-smoke
+  namespace: platform-smoke
+  labels:
+    app.kubernetes.io/name: platform-smoke
+    app.kubernetes.io/component: smoke
+    app.kubernetes.io/part-of: solo-empire-platform
+    solo.empire/environment: homelab
+    solo.empire/team: platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-smoke
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: platform-smoke
+        app.kubernetes.io/component: smoke
+        app.kubernetes.io/part-of: solo-empire-platform
+        solo.empire/environment: homelab
+        solo.empire/team: platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: public.ecr.aws/docker/library/busybox:1.36.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - cp /config/index.html /tmp/index.html && exec httpd -f -p 8080 -h /tmp
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 2
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: content
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: content
+          configMap:
+            name: platform-smoke-content
+        - name: tmp
+          emptyDir: {}

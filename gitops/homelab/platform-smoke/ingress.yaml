@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-smoke
+  namespace: platform-smoke
+  labels:
+    app.kubernetes.io/name: platform-smoke
+    app.kubernetes.io/component: smoke
+    app.kubernetes.io/part-of: solo-empire-platform
+    solo.empire/environment: homelab
+    solo.empire/team: platform
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: platform-smoke.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: platform-smoke
+                port:
+                  name: http

@@ -1,0 +1,36 @@
+# Homelab AppProject destinations for synthetic GitOps workloads.
+# Extends the local pilot project with the platform-smoke namespace only.
+# Do not add staging/production destinations here.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: solo-empire-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: gitops
+    solo.empire/environment: homelab
+spec:
+  description: Solo Empire application deployments (local pilots + homelab synthetic smoke).
+  sourceRepos:
+    - 'https://github.com/bookchaowalit/solo-empire.git'
+    - 'git://*'
+    - 'http://*'
+    - 'https://*'
+    - 'file://*'
+    - '*'
+  destinations:
+    - namespace: apps-ai-doc-assistant-dev
+      server: https://kubernetes.default.svc
+    - namespace: apps-booknbook-dev
+      server: https://kubernetes.default.svc
+    - namespace: 'apps-*'
+      server: https://kubernetes.default.svc
+    - namespace: platform-smoke
+      server: https://kubernetes.default.svc
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
