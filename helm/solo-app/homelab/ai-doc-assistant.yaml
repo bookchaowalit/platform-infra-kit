@@ -45,7 +45,11 @@ configMap:
   data:
     APP_ENV: homelab
     LOG_LEVEL: info
-    # Chroma uses emptyDir (ephemeral demo vector store only).
+    # This is an explicit non-production data contract.
+    SOLO_DATA_CONTRACT: demo-ephemeral
+    SOLO_DATA_DURABILITY: ephemeral
+    SOLO_VECTOR_STORE: chroma-emptyDir
+    SOLO_OBJECT_STORAGE: none
 
 # Secrets stay outside Git (ESO/manual Secret). Health does not need OpenAI.
 externalSecrets:
