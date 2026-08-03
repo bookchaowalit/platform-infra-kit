@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow latest image tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >
+      Images must use an immutable version tag or digest. The mutable :latest
+      tag is not allowed on application workloads.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-image-tag-not-latest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+      validate:
+        message: "Using the ':latest' image tag is not allowed. Use a version tag or digest."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+            =(initContainers):
+              - image: "!*:latest"
+            =(ephemeralContainers):
+              - image: "!*:latest"

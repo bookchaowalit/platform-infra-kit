@@ -1,0 +1,34 @@
+nameOverride: example-web
+
+app:
+  name: example-web
+  team: product
+  environment: dev
+  region: local
+  component: web
+
+image:
+  repository: ghcr.io/example/solo-example-web
+  tag: "0.1.0"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: example-web.dev.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+configMap:
+  enabled: true
+  data:
+    LOG_LEVEL: debug
+    APP_ENV: dev
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

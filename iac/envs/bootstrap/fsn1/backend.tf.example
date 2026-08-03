@@ -1,0 +1,6 @@
+# Copy to backend.tf (gitignored) to store bootstrap policy in remote state.
+# key in backend.hcl must be bootstrap/fsn1/terraform.tfstate
+
+terraform {
+  backend "s3" {}
+}

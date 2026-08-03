@@ -1,0 +1,55 @@
+nameOverride: example-api
+
+app:
+  name: example-api
+  team: platform
+  environment: staging
+  region: ap-southeast-1
+  component: api
+
+image:
+  repository: ghcr.io/example/solo-example-api
+  tag: "0.1.0"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: example-api.staging.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+configMap:
+  enabled: true
+  data:
+    LOG_LEVEL: info
+    APP_ENV: staging
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Pod envFrom is auto-wired to ExternalSecret target (<fullname>-secrets).
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: cluster-secret-store
+    kind: ClusterSecretStore
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: apps/example-api
+        property: database-url
+
+serviceMonitor:
+  enabled: true

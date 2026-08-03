@@ -1,0 +1,36 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resources
+  annotations:
+    policies.kyverno.io/title: Require CPU and memory requests
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >
+      Every container must declare CPU and memory requests so the scheduler
+      and HPA can operate safely at multi-app scale.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-cpu-memory-requests
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+      validate:
+        message: "CPU and memory requests are required on all containers."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"

@@ -18,6 +18,12 @@ Non-production helpers for:
 | `apply-ai-doc-assistant-application.sh` | Operator workstation | Apply durable Argo Application with immutable tag |
 | `bootstrap-ai-doc-assistant-homelab.sh` | Operator workstation | End-to-end registry → trust → push → apply |
 | `verify-ai-doc-assistant-homelab.sh` | Operator workstation | Resilience: Argo, restart, self-heal scale, probes, NetworkPolicy, secrets scan |
+| `verify-homelab-platform.sh` | Operator workstation | Dual-app platform ops baseline (read-only) |
+| `verify-homelab-observability.sh` | Operator workstation | SRE/observability baseline via metrics-server (read-only; no heavy stack) |
+| `audit-multinode-readiness.sh` | Operator workstation | Read-only multi-node readiness audit (no join/install) |
+| `hosts.homelab.fragment` | Operator `/etc/hosts` | Private Homelab hostnames only (not Compose Lab) |
+| `sync-homelab-dns.sh` | Operator workstation | Idempotent Homelab `/etc/hosts` block (`DRY_RUN=1` supported) |
+| `verify-homelab-urls.sh` | Operator workstation | Read-only DNS + HTTP smoke for Homelab URLs |
 | `build-push-booknbook.sh` | Operator workstation | Build/push immutable booknbook image |
 | `apply-booknbook-application.sh` | Operator workstation | Apply booknbook Argo Application |
 | `smoke-booknbook-homelab.sh` | Operator workstation | Locale, probes, static asset, Argo smoke checks |

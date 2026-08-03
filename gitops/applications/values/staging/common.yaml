@@ -1,0 +1,48 @@
+# Shared staging environment overrides.
+app:
+  environment: staging
+  region: ap-southeast-1
+
+replicaCount: 2
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging-placeholder"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: cluster-secret-store
+    kind: ClusterSecretStore
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+
+topologySpreadConstraints:
+  enabled: true
+  whenUnsatisfiable: ScheduleAnyway

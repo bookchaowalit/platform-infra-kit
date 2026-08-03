@@ -1,0 +1,57 @@
+# Application catalog for Argo CD ApplicationSet generators.
+# Only APPROVED pilots appear here. Discovery-only apps stay in APP-INVENTORY.yaml.
+#
+# Image tags are immutable git-SHA tags produced by deploy-app.sh (never :latest).
+# Scaffold/validate: infra/platform/onboarding/
+
+applications:
+  - name: ai-doc-assistant
+    namespace: apps-ai-doc-assistant
+    team: product
+    component: api
+    mode: web
+    image:
+      # Pull host is the disposable k3d registry; tag is set per deploy to git-<sha>
+      repository: k3d-solo-registry:5000/solo-empire/ai-doc-assistant
+      tag: "git-pending"
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    ingress:
+      hostname: ai-doc-assistant.dev.local
+    secrets: []
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 2
+      targetCPUUtilizationPercentage: 80
+
+  - name: booknbook
+    namespace: apps-booknbook
+    team: product
+    component: web
+    mode: web
+    image:
+      repository: k3d-solo-registry:5000/solo-empire/booknbook
+      tag: "git-pending"
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    ingress:
+      hostname: booknbook.dev.local
+    secrets: []
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 2
+      targetCPUUtilizationPercentage: 80

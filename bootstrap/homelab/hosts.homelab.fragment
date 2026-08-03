@@ -1,0 +1,8 @@
+# BEGIN Solo Empire Homelab
+# Managed by infra/platform/bootstrap/homelab/sync-homelab-dns.sh
+# Private LAN only. Do NOT mix with Docker Compose Lab (127.0.0.1 *.local).
+192.168.152.114 ai-doc-assistant.homelab.local
+192.168.152.114 booknbook.homelab.local
+192.168.152.114 platform-smoke.local
+192.168.152.12 registry.homelab.local
+# END Solo Empire Homelab

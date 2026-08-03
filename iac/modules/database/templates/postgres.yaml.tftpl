@@ -1,0 +1,13 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+runcmd:
+  - |
+    set -euo pipefail
+    # Placeholder bootstrap — operators should install PostgreSQL ${postgres_version}
+    # with wal_level=replica, archive_mode=on, and wal-g/pgBackRest to object storage.
+    # ${bootstrap_note}
+    echo "postgres staging host prepared; complete DB install via approved runbook" > /var/log/solo-pg-bootstrap.txt
+final_message: "postgres host skeleton ready"

@@ -1,0 +1,8 @@
+# Copy to backend.tf (gitignored) before provision=true plan/apply.
+# Then: tofu init -backend-config=backend.hcl
+#
+# Do NOT enable this for provision=false scaffold plans (plan-staging.sh).
+
+terraform {
+  backend "s3" {}
+}

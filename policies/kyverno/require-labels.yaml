@@ -1,0 +1,42 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require application labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >
+      Workloads must carry standard app labels plus Solo Empire team and
+      environment labels for ownership and policy scoping.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-required-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Job
+                - CronJob
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+      validate:
+        message: >
+          Required labels missing. Need app.kubernetes.io/name, solo.empire/team,
+          and solo.empire/environment.
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              solo.empire/team: "?*"
+              solo.empire/environment: "?*"

@@ -1,0 +1,56 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-host-namespaces
+  annotations:
+    policies.kyverno.io/title: Disallow host namespaces and hostPath
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      HostNetwork, HostPID, and HostPath are denied by default for application
+      namespaces. Node agents in platform namespaces are excluded.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: host-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - monitoring
+                - observability
+      validate:
+        message: "hostNetwork, hostPID, and hostIPC must not be enabled."
+        pattern:
+          spec:
+            =(hostNetwork): false
+            =(hostPID): false
+            =(hostIPC): false
+    - name: host-path-volumes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - monitoring
+                - observability
+      validate:
+        message: "hostPath volumes are not allowed."
+        pattern:
+          spec:
+            =(volumes):
+              - X(hostPath): "null"

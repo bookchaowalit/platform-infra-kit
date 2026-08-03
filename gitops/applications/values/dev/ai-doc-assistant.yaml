@@ -1,0 +1,184 @@
+# Local k3d pilot values for ai-doc-assistant (RAG demo).
+# Image repository/tag are overridden at deploy time with git-SHA tags from
+# the local registry (see bootstrap/local/deploy-pilot.sh). No secrets in Git.
+
+nameOverride: ai-doc-assistant
+fullnameOverride: ai-doc-assistant
+
+app:
+  name: ai-doc-assistant
+  team: product
+  environment: dev
+  region: local
+  component: api
+  partOf: solo-empire
+
+mode: web
+
+image:
+  # Placeholder; deploy-pilot.sh sets registry + git-<sha> via helm parameters.
+  repository: k3d-solo-registry:5000/solo-empire/ai-doc-assistant
+  tag: "git-9c7eea3ca960e1048880f5c148e3b984116b2c4e"
+  pullPolicy: Always
+
+replicaCount: 1
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: ai-doc-assistant.dev.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+configMap:
+  enabled: true
+  data:
+    APP_ENV: dev
+    LOG_LEVEL: info
+    # Persistence note: Chroma uses emptyDir (ephemeral). See runbook § Chroma.
+
+# Secrets stay outside Git.
+# Health/ready work without OPENAI_API_KEY.
+# To enable /query and /upload embeddings:
+#   1) ./create-pilot-secret.sh   # reads OPENAI_API_KEY from env only
+#   2) set envFromSecrets below (or enable externalSecrets with a ClusterSecretStore)
+externalSecrets:
+  enabled: false
+  # Example when a ClusterSecretStore exists (do not put values in Git):
+  # enabled: true
+  # secretStoreRef:
+  #   name: cluster-secret-store
+  #   kind: ClusterSecretStore
+  # data:
+  #   - secretKey: OPENAI_API_KEY
+  #     remoteRef:
+  #       key: apps/ai-doc-assistant
+  #       property: openai-api-key
+
+# Optional: mount a manually created Secret (create-pilot-secret.sh)
+envFromSecrets: []
+# - secretRef:
+#     name: ai-doc-assistant-openai
+
+env: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 0
+
+# Tighter local NetworkPolicy (k3s/flannel-friendly):
+# - Ingress only TCP/8000 (not all ports) from ingress-nginx, same namespace,
+#   and the default pod CIDR (needed for ClusterIP paths on some CNIs)
+# - Egress: DNS + HTTPS (optional OpenAI) only — not unrestricted
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector: {}
+        # k3s default pod network (ClusterIP → pod path)
+        - ipBlock:
+            cidr: 10.42.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.0/16
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - ports:
+        - protocol: TCP
+          port: 443
+
+topologySpreadConstraints:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+
+# Writable dirs under read-only root FS
+# chroma emptyDir is ephemeral — not a durable vector store (see runbook).
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: uploads
+    mountPath: /app/uploads
+  - name: chroma
+    mountPath: /app/chroma-data
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+  - name: uploads
+    emptyDir: {}
+  - name: chroma
+    emptyDir: {}

@@ -1,0 +1,164 @@
+# Discovery inventory only.
+# This file is NOT read by Argo CD ApplicationSet and must not trigger a deploy.
+# Add an app to gitops/applications/catalog/apps.yaml only after its review gate
+# and data contract are complete.
+
+version: 1
+purpose: discovery
+deployment_enabled: false
+status_values:
+  - candidate
+  - approved
+  - excluded
+  - retired
+
+applications:
+  - id: ai-doc-assistant
+    source_boundary: internal-project
+    source_path: projects/internal/solo-empire/ai-doc-assistant
+    components:
+      - id: app
+        dockerfile: projects/internal/solo-empire/ai-doc-assistant/Dockerfile
+    status: approved
+    deployable: true
+    image_repository: k3d-solo-registry:5000/solo-empire/ai-doc-assistant
+    image_tag: "git-<sha>"  # set by deploy-pilot.sh (immutable; never latest)
+    namespace: apps-ai-doc-assistant-dev
+    data_contract: pilot-local
+    pilot:
+      environment: dev
+      cluster: k3d-solo-dev
+      argocd_application: ai-doc-assistant-dev
+      notes: >
+        Local k3d pilot via Argo CD (Git URL source, local registry, git-SHA tags). Health/ready work without OPENAI_API_KEY.
+        Vector store is emptyDir/in-memory; no managed PostgreSQL in chart.
+
+  - id: booknbook
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook
+    components:
+      - id: app
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook/Dockerfile
+    status: approved
+    deployable: true
+    image_repository: k3d-solo-registry:5000/solo-empire/booknbook
+    image_tag: "git-<sha>"
+    namespace: apps-booknbook-dev
+    data_contract: pilot-local
+    pilot:
+      environment: dev
+      cluster: k3d-solo-dev
+      argocd_application: booknbook-dev
+      notes: >
+        Second local pilot. Next.js standalone, no in-chart DB. Optional external
+        Solo Empire API via NEXT_PUBLIC_SOLO_EMPIRE_API. Health at /healthz, /readyz
+        (middleware excludes those paths from locale redirect). Resilience suite passed
+        on k3d-solo-dev (pod restart, scale, Argo self-heal, rollback, secrets, NetPol).
+
+  - id: bookmarketing
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing
+    components:
+      - id: web
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/web/Dockerfile
+      - id: api-go
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/api-go/Dockerfile
+      - id: api-python
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/api-python/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: bookreading
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/frontend/Dockerfile
+      - id: ai-service
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/ai-service/Dockerfile
+      - id: backend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/backend/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: booktrading
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/frontend/Dockerfile
+      - id: backend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/backend/Dockerfile
+      - id: strategy
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/strategy/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: cuteerp
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products/cuteerp-frontend/Dockerfile
+      - id: backend-integration
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products/cuteerp-backend/integration/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: localcrm
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products/localcrm-frontend/Dockerfile
+      - id: backend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-products/book-products/localcrm-backend/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: linerichmenu
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-website/book-apps/portfolio/bookchaowalit-linerichmenu-frontend
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-apps/portfolio/bookchaowalit-linerichmenu-frontend/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+  - id: pixiu-scraping-facebook
+    source_boundary: book-dev
+    source_path: domains/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools
+    components:
+      - id: frontend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_frontend/Dockerfile
+      - id: backend
+        dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_backend/Dockerfile
+    status: candidate
+    deployable: false
+    image_repository: TBD
+    namespace: TBD
+    data_contract: pending
+
+excluded_from_solo_empire_platform:
+  - source_path: projects/outsource/oak/scan-n-pop
+    reason: client project boundary; deploy only through its own delivery agreement
+  - source_path: domains/product/engineering/book-dev/github/bookchaowalit-freelance/book-work/client-work
+    reason: client work boundary; do not auto-enroll in the central app platform

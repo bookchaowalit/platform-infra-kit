@@ -1,0 +1,57 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - apache2-utils
+write_files:
+  - path: /etc/docker/registry/ca.crt
+    permissions: "0644"
+    encoding: b64
+    content: ${ca_cert_b64}
+  - path: /etc/docker/registry/tls.crt
+    permissions: "0644"
+    encoding: b64
+    content: ${tls_cert_b64}
+  - path: /etc/docker/registry/tls.key
+    permissions: "0600"
+    encoding: b64
+    content: ${tls_key_b64}
+  - path: /etc/docker/registry/config.yml
+    permissions: "0640"
+    content: |
+      version: 0.1
+      log:
+        fields:
+          service: registry
+      storage:
+        filesystem:
+          rootdirectory: /var/lib/registry
+        delete:
+          enabled: true
+      auth:
+        htpasswd:
+          realm: solo-staging-registry
+          path: /etc/docker/registry/htpasswd
+      http:
+        # Bind private IP only — never 0.0.0.0
+        addr: ${private_ip}:5000
+        headers:
+          X-Content-Type-Options: [nosniff]
+        tls:
+          certificate: /etc/docker/registry/tls.crt
+          key: /etc/docker/registry/tls.key
+runcmd:
+  - systemctl enable --now docker
+  - mkdir -p /var/lib/registry /etc/docker/registry
+  - htpasswd -Bbn "${registry_user}" "${registry_password}" > /etc/docker/registry/htpasswd
+  - chmod 600 /etc/docker/registry/htpasswd /etc/docker/registry/tls.key
+  - |
+    docker run -d --restart=always --name registry \
+      --network host \
+      -v /var/lib/registry:/var/lib/registry \
+      -v /etc/docker/registry/config.yml:/etc/docker/registry/config.yml:ro \
+      -v /etc/docker/registry/htpasswd:/etc/docker/registry/htpasswd:ro \
+      -v /etc/docker/registry/tls.crt:/etc/docker/registry/tls.crt:ro \
+      -v /etc/docker/registry/tls.key:/etc/docker/registry/tls.key:ro \
+      registry:2 /etc/docker/registry/config.yml
+final_message: "private HTTPS registry on ${private_ip}:5000 (${hostname}) auth+tls required, not public"

@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: solo-empire-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: gitops
+    solo.empire/environment: dev
+spec:
+  description: Local platform bootstrap boundary; no application sources enabled yet.
+  sourceRepos: []
+  destinations:
+    - namespace: platform
+      server: https://kubernetes.default.svc
+    - namespace: security
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+  clusterResourceWhitelist: []

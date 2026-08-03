@@ -1,0 +1,66 @@
+nameOverride: example-api
+
+app:
+  name: example-api
+  team: platform
+  environment: production
+  # region is set per cluster by ApplicationSet (e.g. ap-southeast-1, us-east-1)
+  component: api
+
+image:
+  repository: ghcr.io/example/solo-example-api
+  # Prefer digest in production; tag is the fallback for local validation
+  tag: "0.1.0"
+  # digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+
+ingress:
+  enabled: true
+  hosts:
+    - host: example-api.prod.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: example-api-tls
+      hosts:
+        - example-api.prod.example.local
+
+configMap:
+  enabled: true
+  data:
+    LOG_LEVEL: info
+    APP_ENV: production
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 75
+
+# Pod envFrom is auto-wired to ExternalSecret target (<fullname>-secrets).
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: cluster-secret-store
+    kind: ClusterSecretStore
+  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: apps/example-api
+        property: database-url
+
+serviceMonitor:
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

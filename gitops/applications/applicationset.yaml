@@ -1,0 +1,116 @@
+# Argo CD ApplicationSet — generates Applications from the app catalog.
+# This is a design/example manifest. Do not apply to a live cluster until
+# Argo CD, cluster registration, and secret stores are ready.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: solo-empire-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: gitops
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    # Matrix: each catalog app × each target cluster (env + region)
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/example/solo-empire.git
+              revision: main
+              files:
+                - path: infra/platform/gitops/applications/catalog/apps.yaml
+          - list:
+              # STAGING/PRODUCTION GENERATORS ARE DISABLED BY DEFAULT.
+              # Only document inactive targets below. Do not uncomment until
+              # ENVIRONMENT-CONTRACT gates pass and soloEmpire.deploymentEnabled
+              # is true on staging values. This manifest is design/example only.
+              elements:
+                - environment: dev
+                  region: local
+                  cluster: https://kubernetes.default.svc
+                  valuesDir: dev
+                # DISABLED — staging (do not enable without human approval):
+                # - environment: staging
+                #   region: ap-southeast-1
+                #   cluster: https://staging-ap-southeast-1.example.local
+                #   valuesDir: staging
+                # DISABLED — production:
+                # - environment: production
+                #   region: ap-southeast-1
+                #   cluster: https://prod-ap-southeast-1.example.local
+                #   valuesDir: production
+                # - environment: production
+                #   region: us-east-1
+                #   cluster: https://prod-us-east-1.example.local
+                #   valuesDir: production
+  template:
+    metadata:
+      name: '{{.name}}-{{.environment}}-{{.region}}'
+      labels:
+        app.kubernetes.io/name: '{{.name}}'
+        solo.empire/environment: '{{.environment}}'
+        solo.empire/region: '{{.region}}'
+        solo.empire/team: '{{.team}}'
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: solo-empire
+      source:
+        repoURL: https://github.com/example/solo-empire.git
+        targetRevision: main
+        path: infra/platform/helm/solo-app
+        helm:
+          releaseName: '{{.name}}'
+          valueFiles:
+            - values.yaml
+            - ../../gitops/applications/values/{{.valuesDir}}/common.yaml
+            - ../../gitops/applications/values/{{.valuesDir}}/{{.name}}.yaml
+          values: |
+            app:
+              name: {{.name}}
+              team: {{.team}}
+              environment: {{.environment}}
+              region: {{.region}}
+              component: {{ default "web" .component }}
+            mode: {{ default "web" .mode }}
+            image:
+              repository: {{.image.repository}}
+              tag: "{{.image.tag}}"
+            replicaCount: {{.replicas}}
+            resources:
+              {{- toYaml .resources | nindent 14 }}
+            autoscaling:
+              enabled: {{.autoscaling.enabled}}
+              minReplicas: {{.autoscaling.minReplicas}}
+              maxReplicas: {{.autoscaling.maxReplicas}}
+              targetCPUUtilizationPercentage: {{.autoscaling.targetCPUUtilizationPercentage}}
+            {{- if .ingress }}
+            ingress:
+              enabled: true
+              hosts:
+                - host: {{.ingress.hostname}}
+                  paths:
+                    - path: /
+                      pathType: Prefix
+            {{- else }}
+            ingress:
+              enabled: false
+            {{- end }}
+      destination:
+        server: '{{.cluster}}'
+        namespace: '{{.namespace}}-{{.environment}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

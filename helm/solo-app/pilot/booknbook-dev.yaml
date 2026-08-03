@@ -1,0 +1,178 @@
+# Local k3d pilot values for booknbook (portfolio Next.js site).
+# No secrets in Git. No PostgreSQL/Redis in chart.
+# Image repository/tag set at deploy time to git-<sha> via helm parameters.
+
+nameOverride: booknbook
+fullnameOverride: booknbook
+
+app:
+  name: booknbook
+  team: product
+  environment: dev
+  region: local
+  component: web
+  partOf: solo-empire
+
+mode: web
+
+image:
+  repository: k3d-solo-registry:5000/solo-empire/booknbook
+  tag: "git-9c7eea3ca960e1048880f5c148e3b984116b2c4e"
+  pullPolicy: Always
+
+# Next.js standalone runs as uid 1001
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+      - ALL
+
+replicaCount: 1
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: booknbook.dev.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+configMap:
+  enabled: true
+  data:
+    APP_ENV: dev
+    NODE_ENV: production
+    # Optional Solo Empire API base (not required for health/ready)
+    # NEXT_PUBLIC_SOLO_EMPIRE_API: http://example.invalid
+
+externalSecrets:
+  enabled: false
+
+envFromSecrets: []
+# Optional dummy/local secrets only via create-pilot-secret pattern:
+# - secretRef:
+#     name: booknbook-app-secrets
+
+env: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 36
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 0
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector: {}
+        - ipBlock:
+            cidr: 10.42.0.0/16
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.0/16
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Optional outbound HTTPS for external API
+    - ports:
+        - protocol: TCP
+          port: 443
+
+topologySpreadConstraints:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: next-cache
+    mountPath: /app/.next/cache
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+  - name: next-cache
+    emptyDir: {}

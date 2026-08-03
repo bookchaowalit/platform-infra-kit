@@ -36,6 +36,9 @@ Only approved applications may be copied into
 Inventory `data_contract` for approved pilots today remains `pilot-local` (dev).
 Homelab values declare ConfigMap `SOLO_DATA_CONTRACT=demo-ephemeral`.
 Staging values declare `soloEmpire.dataContract: staging-durable-planned`.
+The durable design and offline validator were published in commit `2fda008`.
+This does not mean that staging data services or application integration are
+live.
 
 ## Isolation rules
 
@@ -97,6 +100,14 @@ python3 infra/platform/onboarding/scripts/validate-data-contract.py
 MinIO is a **local learning lab** service under `infra/self-hosted-stack/`.
 It is not the Homelab or staging data plane and must not be installed via
 `solo-app` or Homelab GitOps as a durable production substitute.
+
+### Application integration gate
+
+Before `staging-durable-planned` can become `staging-durable`, the application
+must consume the declared PostgreSQL, vector, and object-storage environment
+contracts. The Homelab health path must remain functional without those
+credentials, and local integration tests must pass before any staging
+provisioning or enablement.
 
 ## Current status
 

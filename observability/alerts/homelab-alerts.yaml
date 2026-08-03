@@ -1,0 +1,123 @@
+# DESIGN-ONLY: Example PrometheusRule definitions for future staging/prod.
+# DO NOT APPLY to Homelab K3s.
+# Homelab uses metrics-server + read-only verify scripts only.
+# PrometheusRule CRDs are typically absent on Homelab; applying this would fail
+# or require installing a heavy monitoring stack (forbidden for this baseline).
+#
+# Status: design-only / not-installed / not-applied
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: solo-empire-homelab-design-alerts
+  namespace: monitoring
+  labels:
+    solo.empire/component: observability
+    solo.empire/environment: design-only
+    solo.empire/status: design-only-do-not-apply
+    app.kubernetes.io/part-of: solo-empire
+  annotations:
+    description: >
+      Design-only alert rules. Not part of Homelab GitOps. Do not kubectl apply
+      on the portfolio K3s node. Requires Prometheus Operator CRDs.
+spec:
+  groups:
+    - name: solo-empire.argo
+      rules:
+        - alert: ArgoApplicationDegraded
+          # Placeholder expr — requires Argo metrics exporter when stack exists.
+          expr: vector(0) # design-only placeholder; replace with argo_app_info health/sync metrics
+          for: 10m
+          labels:
+            severity: warning
+            design_only: "true"
+          annotations:
+            summary: Argo CD application degraded (design)
+            description: Application not Synced/Healthy for 10m. Homelab check via verify-homelab-observability.sh today.
+
+    - name: solo-empire.workloads
+      rules:
+        - alert: PodUnavailable
+          expr: kube_deployment_status_replicas_unavailable > 0
+          for: 5m
+          labels:
+            severity: warning
+            design_only: "true"
+          annotations:
+            summary: Deployment has unavailable replicas (design)
+            description: readyReplicas below desired for demo or future apps.
+
+        - alert: PodRestartIncrease
+          expr: increase(kube_pod_container_status_restarts_total[15m]) > 0
+          for: 0m
+          labels:
+            severity: warning
+            design_only: "true"
+          annotations:
+            summary: Pod restart count increased (design)
+            description: Homelab baseline expects restartCount=0 during verify windows.
+
+        - alert: CrashLoopBackOff
+          expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            design_only: "true"
+          annotations:
+            summary: Container in CrashLoopBackOff (design)
+
+        - alert: ImagePullBackOff
+          expr: kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            design_only: "true"
+          annotations:
+            summary: Image pull failure (design)
+
+    - name: solo-empire.node
+      rules:
+        - alert: NodeMemoryPressure
+          expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+          for: 10m
+          labels:
+            severity: critical
+            design_only: "true"
+          annotations:
+            summary: Node memory critical (design, 85%)
+            description: Homelab soft warn is 75% via metrics-server kubectl top.
+
+        - alert: NodeCPUSaturation
+          expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 15m
+          labels:
+            severity: critical
+            design_only: "true"
+          annotations:
+            summary: Node CPU critical (design, 85%)
+            description: Homelab soft warn is 70% via metrics-server kubectl top.
+
+    - name: solo-empire.ingress
+      rules:
+        - alert: IngressHigh5xx
+          # Requires nginx ingress controller metrics when scraped.
+          expr: vector(0) # design-only placeholder for nginx_ingress_controller_requests{status=~"5.."}
+          for: 10m
+          labels:
+            severity: warning
+            design_only: "true"
+          annotations:
+            summary: Elevated ingress 5xx (design)
+            description: Homelab currently smoke-tests /healthz and /readyz for HTTP 200 only.
+
+    - name: solo-empire.certs
+      rules:
+        - alert: CertificateExpirySoon
+          expr: vector(0) # design-only; cert-manager cert expiry metrics when available
+          for: 1h
+          labels:
+            severity: warning
+            design_only: "true"
+          annotations:
+            summary: Certificate expiring within 14 days (design)
+            description: Homelab portfolio ingress is often HTTP on private LAN without public TLS.

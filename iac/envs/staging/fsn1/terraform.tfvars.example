@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars (gitignored) only when preparing a real enablement PR.
+# NEVER set provision = true without written human approval.
+# NEVER commit real tokens or private keys.
+
+provision          = false
+name               = "solo-staging"
+region             = "fsn1"
+dns_zone           = "example.local" # replace with approved domain before DNS enable
+registry_hostname  = "registry.staging.example.local"
+monthly_budget_eur = 80
+general_node_count = 2
+max_worker_nodes   = 4
+pitr_retention_days = 7
+
+# Required when provision = true:
+# ssh_key_ids     = ["12345678"]
+# allow_ssh_cidrs = ["203.0.113.10/32"]   # your admin IP — never 0.0.0.0/0
+# allow_kube_api_public_cidrs = []       # keep empty for private API only
+# hcloud_token via: export HCLOUD_TOKEN=...

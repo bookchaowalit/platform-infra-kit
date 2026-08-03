@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: platform
+    solo.empire/environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: security
+    solo.empire/environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: monitoring
+    solo.empire/environment: dev

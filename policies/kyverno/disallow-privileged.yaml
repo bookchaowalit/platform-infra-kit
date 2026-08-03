@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged
+  annotations:
+    policies.kyverno.io/title: Disallow privileged containers
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: Privileged containers are denied for application workloads.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: privileged-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+      validate:
+        message: "Privileged mode is not allowed."
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): false
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): false

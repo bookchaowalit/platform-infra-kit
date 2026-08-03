@@ -1,0 +1,42 @@
+# Placeholder for image signature / attestation enforcement (Cosign + Kyverno
+# verifyImages). Disabled until a signing key and registry policy exist.
+#
+# When ready:
+# 1. Create a Cosign key pair (or use keyless OIDC).
+# 2. Store the public key in a ConfigMap/Secret referenced by Kyverno.
+# 3. Set spec.validationFailureAction to Audit, then Enforce.
+# 4. Remove the "disabled" annotation and set failurePolicy appropriately.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: image-provenance-placeholder
+  annotations:
+    policies.kyverno.io/title: Image signatures (placeholder)
+    policies.kyverno.io/category: Supply Chain
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >
+      Template for requiring signed images. Not enforced yet.
+    solo.empire/status: disabled-placeholder
+spec:
+  # Keep Audit even after enablement for one validation window.
+  validationFailureAction: Audit
+  background: false
+  # Rules intentionally empty — enable verifyImages when Cosign is configured.
+  rules: []
+  # Example future rule (commented YAML, not applied as a rule):
+  # rules:
+  #   - name: verify-high-level-images
+  #     match:
+  #       any:
+  #         - resources:
+  #             kinds: [Pod]
+  #     verifyImages:
+  #       - imageReferences:
+  #           - "ghcr.io/example/*"
+  #         attestors:
+  #           - entries:
+  #               - keys:
+  #                   publicKeys: |-
+  #                     -----BEGIN PUBLIC KEY-----
+  #                     ...
+  #                     -----END PUBLIC KEY-----

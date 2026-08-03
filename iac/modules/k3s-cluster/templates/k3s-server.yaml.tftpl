@@ -1,0 +1,54 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+write_files:
+  - path: /usr/local/share/ca-certificates/solo-registry-ca.crt
+    permissions: "0644"
+    encoding: b64
+    content: ${registry_ca_b64}
+  - path: /etc/rancher/k3s/registry-ca.crt
+    permissions: "0644"
+    encoding: b64
+    content: ${registry_ca_b64}
+  - path: /etc/rancher/k3s/registries.yaml
+    permissions: "0600"
+    content: |
+      mirrors:
+        "${registry_hostname}:5000":
+          endpoint:
+            - "https://${registry_private_ip}:5000"
+        "${registry_private_ip}:5000":
+          endpoint:
+            - "https://${registry_private_ip}:5000"
+      configs:
+        "${registry_hostname}:5000":
+          auth:
+            username: ${registry_username}
+            password: ${registry_password}
+          tls:
+            ca_file: /etc/rancher/k3s/registry-ca.crt
+        "${registry_private_ip}:5000":
+          auth:
+            username: ${registry_username}
+            password: ${registry_password}
+          tls:
+            ca_file: /etc/rancher/k3s/registry-ca.crt
+runcmd:
+  - update-ca-certificates || true
+  - |
+    set -euo pipefail
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${k3s_version}" sh -s - server \
+      --token "${k3s_token}" \
+      --cluster-cidr "${cluster_cidr}" \
+      --service-cidr "${service_cidr}" \
+      --tls-san "${tls_san}" \
+      --tls-san "${tls_san_name}" \
+      --node-ip "${tls_san}" \
+      --advertise-address "${tls_san}" \
+      --write-kubeconfig-mode 644 \
+      --node-name "${node_name}" \
+      --disable traefik
+  - systemctl restart k3s || true
+final_message: "k3s server ready; registry TLS trust installed for ${registry_hostname}"

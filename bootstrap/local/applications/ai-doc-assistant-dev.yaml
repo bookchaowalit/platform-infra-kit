@@ -1,0 +1,51 @@
+# Template rendered by render-application.sh / deploy-pilot.sh
+# Placeholders: git://k3d-solo-git:9418/solo-empire-pilot.git main k3d-solo-registry:5000/solo-empire/ai-doc-assistant git-9c7eea3ca960e1048880f5c148e3b984116b2c4e
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-doc-assistant-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ai-doc-assistant
+    solo.empire/environment: dev
+    solo.empire/region: local
+    solo.empire/team: product
+    solo.empire/pilot: "true"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: solo-empire-apps
+  source:
+    # Configurable Git source (never file://). Set via pilot.env / render-application.sh.
+    repoURL: git://k3d-solo-git:9418/solo-empire-pilot.git
+    targetRevision: main
+    path: infra/platform/helm/solo-app
+    helm:
+      releaseName: ai-doc-assistant
+      valueFiles:
+        - pilot/dev-common.yaml
+        - pilot/ai-doc-assistant-dev.yaml
+      # Immutable image override from deploy pipeline (git SHA tag)
+      parameters:
+        - name: image.repository
+          value: k3d-solo-registry:5000/solo-empire/ai-doc-assistant
+        - name: image.tag
+          value: git-9c7eea3ca960e1048880f5c148e3b984116b2c4e
+        - name: image.pullPolicy
+          value: Always
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps-ai-doc-assistant-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 1m

@@ -1,0 +1,18 @@
+# Copy to backend.hcl (gitignored). Required for provision=true plan/apply.
+# NEVER use local state when provision=true.
+# Credentials via env — not this file:
+#   export AWS_ACCESS_KEY_ID=...
+#   export AWS_SECRET_ACCESS_KEY=...
+
+bucket       = "solo-empire-tfstate-staging"
+key          = "staging/fsn1/terraform.tfstate"
+region       = "fsn1"
+endpoint     = "https://fsn1.your-objectstorage.com"
+encrypt      = true
+use_lockfile = true
+
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_region_validation      = true
+skip_requesting_account_id  = true
+use_path_style              = true

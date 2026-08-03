@@ -1,0 +1,276 @@
+# Shared platform service inventory.
+# Design-only: not consumed by Argo CD, Helm, Docker Compose, or IaC.
+# The source of truth for the current local runtime remains docker-compose.yml.
+
+version: 1
+purpose: platform-inventory
+deployment_enabled: false
+default_namespace: platform
+data_services_in_scope: false
+
+services:
+  - id: traefik
+    layer: ingress
+    local_profile: core
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://traefik.local
+    production_target: managed-ingress-or-gateway
+    state: stateless
+    public_exposure: controlled-ingress-only
+
+  - id: coredns
+    layer: service-discovery
+    local_profile: core
+    runtime: shared
+    kubernetes_namespace: kube-system
+    local_access: host-dns-only
+    production_target: cluster-dns
+    state: stateless
+    public_exposure: none
+
+  - id: homer
+    layer: operations-ui
+    local_profile: core
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://homer.local
+    production_target: platform-portal
+    state: stateless
+    public_exposure: private
+
+  - id: autoheal
+    layer: local-operations
+    local_profile: core
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: container-internal
+    production_target: kubernetes-controller-and-probes
+    state: local-only
+    public_exposure: none
+
+  - id: docker-socket-proxy
+    layer: local-operations
+    local_profile: core
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: container-internal
+    production_target: kubernetes-api-rbac
+    state: local-only
+    public_exposure: none
+
+  # Prometheus/Grafana/Loki/Tempo below are Docker Compose Lab inventory only.
+  # Homelab K3s observability baseline uses metrics-server + read-only scripts.
+  # Do not install kube-prometheus-stack on the portfolio Homelab node.
+  - id: metrics-server
+    layer: observability
+    local_profile: none
+    runtime: cluster-agent
+    kubernetes_namespace: kube-system
+    local_access: kubectl-top
+    production_target: metrics-server-or-managed-metrics-api
+    state: stateless
+    public_exposure: none
+    notes: Live on Homelab K3s and local k3d; Homelab SRE baseline dependency
+
+  - id: prometheus
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://prometheus.local
+    production_target: managed-prometheus-or-dedicated-stack
+    state: stateful
+    public_exposure: private
+    notes: Docker Compose Lab only; not Homelab GitOps
+
+  - id: grafana
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://grafana.local
+    production_target: managed-grafana-or-dedicated-stack
+    state: stateful
+    public_exposure: private
+    notes: Docker Compose Lab only; not Homelab GitOps
+
+  - id: loki
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://loki.local
+    production_target: managed-log-backend-or-object-storage-backed-stack
+    state: stateful
+    public_exposure: private
+
+  - id: tempo
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://tempo.local
+    production_target: managed-trace-backend-or-otlp-stack
+    state: stateful
+    public_exposure: private
+
+  - id: alertmanager
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://alertmanager.local
+    production_target: managed-alert-routing-or-ha-stack
+    state: stateful
+    public_exposure: private
+
+  - id: uptime-kuma
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://uptime.local
+    production_target: synthetic-monitoring-stack
+    state: stateful
+    public_exposure: private
+
+  - id: node-exporter
+    layer: observability
+    local_profile: observability
+    runtime: cluster-agent
+    kubernetes_namespace: monitoring
+    local_access: metrics-internal
+    production_target: node-exporter-daemonset-or-managed-agent
+    state: stateless
+    public_exposure: none
+
+  - id: cadvisor
+    layer: observability
+    local_profile: observability
+    runtime: cluster-agent
+    kubernetes_namespace: monitoring
+    local_access: https://cadvisor.local
+    production_target: kubelet-or-container-metrics-agent
+    state: stateless
+    public_exposure: private
+
+  - id: blackbox-exporter
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: monitoring
+    local_access: metrics-internal
+    production_target: blackbox-probe-deployment
+    state: stateless
+    public_exposure: none
+
+  - id: pushgateway
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: monitoring
+    local_access: https://pushgateway.local
+    production_target: short-lived-metrics-gateway-or-remote-write
+    state: stateful
+    public_exposure: private
+
+  - id: graphite
+    layer: observability
+    local_profile: observability
+    runtime: shared
+    kubernetes_namespace: monitoring
+    local_access: https://graphite.local
+    production_target: managed-metrics-backend-or-remove-after-migration
+    state: stateful
+    public_exposure: private
+
+  - id: gitea
+    layer: source-control
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://gitea.local
+    production_target: GitHub-or-managed-source-control
+    state: stateful
+    public_exposure: private
+
+  - id: woodpecker-server
+    layer: ci
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://woodpecker.local
+    production_target: managed-ci-or-woodpecker-on-kubernetes
+    state: stateful
+    public_exposure: private
+
+  - id: woodpecker-agent
+    layer: ci
+    local_profile: devsecops
+    runtime: cluster-agent
+    kubernetes_namespace: platform
+    local_access: container-internal
+    production_target: isolated-ci-runner
+    state: local-only
+    public_exposure: none
+
+  - id: trivy
+    layer: supply-chain-security
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: security
+    local_access: container-internal
+    production_target: CI-registry-scanner
+    state: stateless
+    public_exposure: none
+
+  - id: step-ca
+    layer: certificates
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: container-internal
+    production_target: cert-manager-with-public-or-enterprise-CA
+    state: stateful
+    public_exposure: private
+
+  - id: vaultwarden
+    layer: credential-learning
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://vaultwarden.local
+    production_target: cloud-secret-manager-or-enterprise-password-manager
+    state: stateful
+    public_exposure: private
+
+  - id: oauth2-proxy
+    layer: authentication
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://oauth2.local
+    production_target: identity-aware-proxy-or-gateway-auth
+    state: stateless
+    public_exposure: private
+
+  - id: spicedb
+    layer: authorization
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: https://spicedb.local
+    production_target: SpiceDB-on-Kubernetes-with-managed-datastore
+    state: stateful
+    public_exposure: private
+
+  - id: diun
+    layer: image-update-awareness
+    local_profile: devsecops
+    runtime: shared
+    kubernetes_namespace: platform
+    local_access: container-internal
+    production_target: registry-events-and-GitOps-promotion
+    state: stateful
+    public_exposure: none

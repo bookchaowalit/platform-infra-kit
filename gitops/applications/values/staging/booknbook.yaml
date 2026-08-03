@@ -1,0 +1,190 @@
+# Staging-ready values for booknbook.
+# STAGING DEPLOYMENT IS DISABLED BY DEFAULT.
+# Do not apply to a cluster, do not register an Argo Application for staging,
+# and do not put real secrets or production hostnames here.
+#
+# Enable only after ENVIRONMENT-CONTRACT gates pass and a human flips
+# soloEmpire.deploymentEnabled (and wires External Secrets if needed).
+
+soloEmpire:
+  # Platform gate consumed by validate-onboarding / CI (not a Helm chart toggle).
+  deploymentEnabled: false
+  environment: staging
+  dataContract: pilot-local
+  data:
+    postgresql: none  # booknbook pilot has no required DB
+    vectorStore: none
+    objectStorage: none-required-for-mvp
+    externalApi: optional-solo-empire-api  # NEXT_PUBLIC_* only; no secrets in Git
+
+nameOverride: booknbook
+fullnameOverride: booknbook
+
+app:
+  name: booknbook
+  team: product
+  environment: staging
+  region: ap-southeast-1
+  component: web
+  partOf: solo-empire
+
+mode: web
+
+image:
+  repository: registry.example.local/solo-empire/booknbook
+  tag: "git-pending"
+  pullPolicy: IfNotPresent
+
+# Next.js standalone non-root
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+      - ALL
+
+replicaCount: 2
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging-placeholder"
+  hosts:
+    - host: booknbook.staging.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: booknbook-staging-tls-placeholder
+      hosts:
+        - booknbook.staging.example.local
+
+configMap:
+  enabled: true
+  data:
+    APP_ENV: staging
+    NODE_ENV: production
+    # Optional public API base (non-secret). Real staging URL set at enablement.
+    # NEXT_PUBLIC_SOLO_EMPIRE_API: https://api.staging.example.local
+
+externalSecrets:
+  enabled: false
+  # If secrets become required later, enable ESO with path references only:
+  # secretStoreRef:
+  #   name: cluster-secret-store
+  #   kind: ClusterSecretStore
+  # data: []
+
+envFromSecrets: []
+env: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /readyz
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /healthz
+    port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 36
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - ports:
+        - protocol: TCP
+          port: 443
+
+topologySpreadConstraints:
+  enabled: true
+  whenUnsatisfiable: ScheduleAnyway
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: next-cache
+    mountPath: /app/.next/cache
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+  - name: next-cache
+    emptyDir: {}

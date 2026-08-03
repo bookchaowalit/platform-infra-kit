@@ -1,0 +1,54 @@
+nameOverride: example-worker
+
+app:
+  name: example-worker
+  team: platform
+  environment: dev
+  region: local
+  component: worker
+
+mode: worker
+
+image:
+  repository: ghcr.io/example/solo-example-worker
+  tag: "0.1.0"
+
+replicaCount: 1
+
+ingress:
+  enabled: false
+
+service:
+  enabled: false
+
+worker:
+  command: ["/app/worker"]
+  args: ["--queue=default"]
+
+configMap:
+  enabled: true
+  data:
+    LOG_LEVEL: debug
+    APP_ENV: dev
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+probes:
+  liveness:
+    enabled: false
+  readiness:
+    enabled: false
+  startup:
+    enabled: false

@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: solo-empire-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: gitops
+    solo.empire/environment: dev
+spec:
+  description: Local business application deployments (pilot apps only).
+  sourceRepos:
+    # Configurable: remote HTTPS Git and/or local disposable git-daemon snapshot
+    - 'https://github.com/bookchaowalit/solo-empire.git'
+    - 'git://*'
+    - 'http://*'
+    - 'https://*'
+    - '*'
+  destinations:
+    - namespace: apps-ai-doc-assistant-dev
+      server: https://kubernetes.default.svc
+    - namespace: apps-booknbook-dev
+      server: https://kubernetes.default.svc
+    - namespace: 'apps-*'
+      server: https://kubernetes.default.svc
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
