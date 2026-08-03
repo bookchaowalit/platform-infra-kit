@@ -31,12 +31,12 @@ rsync -a \
   --exclude '**/__pycache__' \
   "$ROOT/" "$SNAP_SRC/"
 
-if [[ -d "$ROOT/projects/internal/solo-empire/ai-doc-assistant" ]]; then
-  rm -rf "$SNAP_SRC/projects/internal/solo-empire/ai-doc-assistant"
-  mkdir -p "$SNAP_SRC/projects/internal/solo-empire"
+if [[ -d "$ROOT/jobs/internal/solo-empire/ai-doc-assistant" ]]; then
+  rm -rf "$SNAP_SRC/jobs/internal/solo-empire/ai-doc-assistant"
+  mkdir -p "$SNAP_SRC/jobs/internal/solo-empire"
   rsync -a --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
-    "$ROOT/projects/internal/solo-empire/ai-doc-assistant/" \
-    "$SNAP_SRC/projects/internal/solo-empire/ai-doc-assistant/"
+    "$ROOT/jobs/internal/solo-empire/ai-doc-assistant/" \
+    "$SNAP_SRC/jobs/internal/solo-empire/ai-doc-assistant/"
 fi
 
 git -C "$SNAP_SRC" init -q

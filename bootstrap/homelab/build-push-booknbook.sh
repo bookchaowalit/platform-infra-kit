@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-APP_DIR="${ROOT}/domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook"
+APP_DIR="${ROOT}/projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook"
 REGISTRY_HOST="${REGISTRY_HOST:-registry.homelab.local}"
 REGISTRY_PORT="${REGISTRY_PORT:-5000}"
 IMAGE_NAME="${IMAGE_NAME:-solo-empire/booknbook}"

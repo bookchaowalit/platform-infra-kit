@@ -12,8 +12,8 @@ spec:
   environment: dev
   region: local
   cluster: k3d-solo-dev
-  source_path: projects/internal/solo-empire/ai-doc-assistant
-  dockerfile: projects/internal/solo-empire/ai-doc-assistant/Dockerfile
+  source_path: jobs/internal/solo-empire/ai-doc-assistant
+  dockerfile: jobs/internal/solo-empire/ai-doc-assistant/Dockerfile
   image_name: solo-empire/ai-doc-assistant
   data_contract: pilot-local
   target_port: 8000

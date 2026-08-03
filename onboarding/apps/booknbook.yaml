@@ -12,8 +12,8 @@ spec:
   environment: dev
   region: local
   cluster: k3d-solo-dev
-  source_path: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook
-  dockerfile: domains/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook/Dockerfile
+  source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook
+  dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook/Dockerfile
   image_name: solo-empire/booknbook
   data_contract: pilot-local
   target_port: 3000
