@@ -144,13 +144,13 @@ applications:
     data_contract: pending
 
   - id: pixiu-scraping-facebook
-    source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools
+    source_boundary: jobs
+    source_path: jobs/freelance/solo-empire/pixiu
     components:
       - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_frontend/Dockerfile
+        dockerfile: jobs/freelance/solo-empire/pixiu/pixiu_scraping_facebook_frontend/Dockerfile
       - id: backend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_backend/Dockerfile
+        dockerfile: jobs/freelance/solo-empire/pixiu/pixiu_scraping_facebook_backend/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -160,5 +160,5 @@ applications:
 excluded_from_solo_empire_platform:
   - source_path: jobs/outsource/oak/scan-n-pop
     reason: client project boundary; deploy only through its own delivery agreement
-  - source_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-work/client-work
+  - source_path: jobs/freelance/solo-empire/teeparinwat
     reason: client work boundary; do not auto-enroll in the central app platform
