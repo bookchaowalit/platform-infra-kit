@@ -109,6 +109,12 @@ contracts. The Homelab health path must remain functional without those
 credentials, and local integration tests must pass before any staging
 provisioning or enablement.
 
+For the application-side ingest procedure, every app must follow the shared
+[Data Lake learning playbook](../../learning/platform-engineering/app-cli-data-lake-playbook.md):
+batch and native files land directly in Object Storage, structured real-time
+events use the Kafka-compatible lane, and SQLite/API/MCP/vector projections run
+only after the durable lake write.
+
 ## Current status
 
 - `infra/platform/APP-INVENTORY.yaml` is primarily discovery.

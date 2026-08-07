@@ -15,10 +15,10 @@ status_values:
 applications:
   - id: ai-doc-assistant
     source_boundary: internal-project
-    source_path: jobs/internal/solo-empire/ai-doc-assistant
+    source_path: engagements/internal/solo-empire/ai-doc-assistant
     components:
       - id: app
-        dockerfile: jobs/internal/solo-empire/ai-doc-assistant/Dockerfile
+        dockerfile: engagements/internal/solo-empire/ai-doc-assistant/Dockerfile
     status: approved
     deployable: true
     image_repository: k3d-solo-registry:5000/solo-empire/ai-doc-assistant
@@ -103,20 +103,6 @@ applications:
     namespace: TBD
     data_contract: pending
 
-  - id: cuteerp
-    source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products
-    components:
-      - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products/cuteerp-frontend/Dockerfile
-      - id: backend-integration
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products/cuteerp-backend/integration/Dockerfile
-    status: candidate
-    deployable: false
-    image_repository: TBD
-    namespace: TBD
-    data_contract: pending
-
   - id: localcrm
     source_boundary: book-dev
     source_path: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products
@@ -144,13 +130,13 @@ applications:
     data_contract: pending
 
   - id: pixiu-scraping-facebook
-    source_boundary: jobs
-    source_path: jobs/freelance/solo-empire/pixiu
+    source_boundary: engagements
+    source_path: engagements/freelance/solo-empire/pixiu
     components:
       - id: frontend
-        dockerfile: jobs/freelance/solo-empire/pixiu/pixiu_scraping_facebook_frontend/Dockerfile
+        dockerfile: engagements/freelance/solo-empire/pixiu/pixiu_scraping_facebook_frontend/Dockerfile
       - id: backend
-        dockerfile: jobs/freelance/solo-empire/pixiu/pixiu_scraping_facebook_backend/Dockerfile
+        dockerfile: engagements/freelance/solo-empire/pixiu/pixiu_scraping_facebook_backend/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -158,7 +144,7 @@ applications:
     data_contract: pending
 
 excluded_from_solo_empire_platform:
-  - source_path: jobs/outsource/oak/scan-n-pop
+  - source_path: engagements/outsource/oak/scan-n-pop
     reason: client project boundary; deploy only through its own delivery agreement
-  - source_path: jobs/freelance/solo-empire/teeparinwat
+  - source_path: engagements/freelance/solo-empire/teeparinwat
     reason: client work boundary; do not auto-enroll in the central app platform

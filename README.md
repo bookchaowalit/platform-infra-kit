@@ -78,6 +78,7 @@ python3 infra/tests/platform_validation_test.py
 - [Service ownership boundaries](../self-hosted-stack/SERVICE-OWNERSHIP.md)
 - [Application inventory](./APP-INVENTORY.yaml) (discovery only)
 - [Application data contract](./DATA-CONTRACT.md) (approval gate)
+- [App/CLI Data Lake learning playbook](../../learning/platform-engineering/app-cli-data-lake-playbook.md) (lake-first procedure)
 - [Platform services inventory](./PLATFORM-SERVICES.yaml) (design only)
 - [Environment contract](./ENVIRONMENT-CONTRACT.md) (design only)
 - [Local Kubernetes bootstrap](./bootstrap/local/README.md) (local-only)

@@ -23,6 +23,13 @@ production, or real secrets.
 3. Health endpoints (`/healthz`, `/readyz` by default)
 4. Inventory review complete (not freelance/client, not multi-service)
 
+Before adding an app data path, read the shared
+[Data Lake learning playbook](../../../learning/platform-engineering/app-cli-data-lake-playbook.md).
+Every app must choose a batch, streaming, or native-file lane and persist to
+Object Storage before creating an SQLite, API, MCP, dashboard, vector, or other
+operational projection. The pilot `pilot-local` contract is still a lab
+boundary; it does not make emptyDir or local uploads durable.
+
 ## Scaffold a new app (do not deploy third app yet)
 
 ```bash
