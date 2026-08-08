@@ -1,3 +1,11 @@
+---
+title: "Homelab GitOps"
+tags: [documentation, infra]
+created: 2026-08-02
+updated: 2026-08-08
+description: "Documentation for Homelab GitOps."
+---
+
 # Homelab GitOps
 
 Private-LAN K3s GitOps sources for non-production portfolio workloads.

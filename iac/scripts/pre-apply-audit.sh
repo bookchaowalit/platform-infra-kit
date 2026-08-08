@@ -100,7 +100,7 @@ fi
 
 # 9-10 docs
 for f in STAGING-DATA-BACKUP-RESTORE.md PRE-APPLY-AUDIT.md STAGING-INFRA-RUNBOOK.md; do
-  if [[ -f "$REPO/docs/operations/$f" ]]; then
+  if [[ -f "$REPO/operations/$f" ]]; then
     ok "doc present: $f"
   else
     fail "missing doc: $f"

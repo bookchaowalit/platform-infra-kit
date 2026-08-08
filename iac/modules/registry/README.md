@@ -1,3 +1,11 @@
+---
+title: "Module: registry (private TLS + htpasswd)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Module: registry (private TLS + htpasswd)."
+---
+
 # Module: registry (private TLS + htpasswd)
 
 Private Docker Distribution registry for Solo Empire **staging** on Hetzner.
@@ -48,4 +56,4 @@ Root module passes `ca_cert_pem` into `k3s-cluster` and `node-pools` cloud-init:
 ## Enablement
 
 Requires root `provision=true` + `ssh_key_ids` + `allow_ssh_cidrs`.  
-See `docs/operations/STAGING-INFRA-RUNBOOK.md`.
+See `operations/STAGING-INFRA-RUNBOOK.md`.

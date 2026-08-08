@@ -1,3 +1,11 @@
+---
+title: "Solo Empire Kubernetes Application Platform"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Solo Empire Kubernetes Application Platform."
+---
+
 # Solo Empire Kubernetes Application Platform
 
 Reusable platform for deploying approximately **100 applications** across
@@ -67,12 +75,12 @@ python3 infra/tests/platform_validation_test.py
 
 ## Related docs
 
-- [Current platform status](../../docs/operations/PLATFORM-STATUS.md)
-- [Cost plan](../../docs/operations/COST-PLAN.md)
-- [Production cost comparison](../../docs/operations/PRODUCTION-COST-COMPARISON.md)
-- [Portfolio execution plan](../../docs/operations/PORTFOLIO-EXECUTION-PLAN.md)
-- [Homelab plan](../../docs/operations/HOMELAB-PLAN.md)
-- [Kubernetes Platform Readiness](../../docs/operations/KUBERNETES-PLATFORM-READINESS.md)
+- [Current platform status](../../operations/PLATFORM-STATUS.md)
+- [Cost plan](../../operations/COST-PLAN.md)
+- [Production cost comparison](../../operations/PRODUCTION-COST-COMPARISON.md)
+- [Portfolio execution plan](../../operations/PORTFOLIO-EXECUTION-PLAN.md)
+- [Homelab plan](../../operations/HOMELAB-PLAN.md)
+- [Kubernetes Platform Readiness](../../operations/KUBERNETES-PLATFORM-READINESS.md)
 - [IaC design](./iac/README.md)
 - [Self-hosted Docker lab](../self-hosted-stack/README.md) (local learning only)
 - [Service ownership boundaries](../self-hosted-stack/SERVICE-OWNERSHIP.md)
@@ -89,8 +97,8 @@ Reusable onboarding: [`onboarding/README.md`](./onboarding/README.md).
 
 | App | Namespace | Argo CD | Data contract | Runbook |
 |-----|-----------|---------|---------------|---------|
-| **ai-doc-assistant** | `apps-ai-doc-assistant-dev` | `ai-doc-assistant-dev` | pilot-local | [runbook](../../docs/operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md) |
-| **booknbook** | `apps-booknbook-dev` | `booknbook-dev` | pilot-local | [runbook](../../docs/operations/BOOKNBOOK-PILOT-RUNBOOK.md) |
+| **ai-doc-assistant** | `apps-ai-doc-assistant-dev` | `ai-doc-assistant-dev` | pilot-local | [runbook](../../operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md) |
+| **booknbook** | `apps-booknbook-dev` | `booknbook-dev` | pilot-local | [runbook](../../operations/BOOKNBOOK-PILOT-RUNBOOK.md) |
 
 ```bash
 # After platform bootstrap on k3d-solo-dev:
@@ -116,9 +124,9 @@ connected to production app data.
 | Doc | Purpose |
 |-----|---------|
 | [ENVIRONMENT-CONTRACT.md](./ENVIRONMENT-CONTRACT.md) | Namespace, registry, secrets, ingress, data, budgets |
-| [PRODUCTION-GAPS.md](../../docs/operations/PRODUCTION-GAPS.md) | Open production gaps |
-| [PROVIDER-DECISION.md](../../docs/operations/PROVIDER-DECISION.md) | Locked staging: Hetzner k3s fsn1 |
-| [STAGING-INFRA-RUNBOOK.md](../../docs/operations/STAGING-INFRA-RUNBOOK.md) | Plan-only ops + enablement checklist |
+| [PRODUCTION-GAPS.md](../../operations/PRODUCTION-GAPS.md) | Open production gaps |
+| [PROVIDER-DECISION.md](../../operations/PROVIDER-DECISION.md) | Locked staging: Hetzner k3s fsn1 |
+| [STAGING-INFRA-RUNBOOK.md](../../operations/STAGING-INFRA-RUNBOOK.md) | Plan-only ops + enablement checklist |
 | [iac/README.md](./iac/README.md) | OpenTofu modules + plan script |
 | [values/staging/DEPLOYMENT.md](./gitops/applications/values/staging/DEPLOYMENT.md) | App deploy gate |
 

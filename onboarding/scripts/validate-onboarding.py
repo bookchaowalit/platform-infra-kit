@@ -30,7 +30,7 @@ VALUES_STAGING = GITOPS / "values" / "staging"
 CATALOG = GITOPS / "catalog" / "apps.yaml"
 INVENTORY = PLATFORM / "APP-INVENTORY.yaml"
 APPS_DIR = ONBOARDING / "apps"
-DOCS_OPS = ROOT / "docs" / "operations"
+DOCS_OPS = ROOT / "operations"
 
 sys.path.insert(0, str(SCRIPTS))
 
@@ -458,9 +458,9 @@ def validate_docs_and_contract(c: Checker) -> None:
     ):
         path = DOCS_OPS / rel
         if path.exists():
-            c.ok(f"docs/operations/{rel} present")
+            c.ok(f"operations/{rel} present")
         else:
-            c.fail(f"docs/operations/{rel} missing")
+            c.fail(f"operations/{rel} missing")
 
     iac_root = PLATFORM / "iac" / "envs" / "staging" / "fsn1" / "main.tf"
     if iac_root.exists():

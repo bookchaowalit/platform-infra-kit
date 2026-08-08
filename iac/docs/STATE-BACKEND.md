@@ -1,3 +1,11 @@
+---
+title: "OpenTofu remote state backend (staging)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for OpenTofu remote state backend (staging)."
+---
+
 # OpenTofu remote state backend (staging)
 
 **Scope:** Hetzner `fsn1` staging only.  
@@ -151,7 +159,7 @@ aws s3api get-object --bucket … --key staging/fsn1/terraform.tfstate \
 3. `tofu plan` (no apply) and reconcile drift.
 4. Document incident; rotate credentials if compromise suspected.
 
-See also [STAGING-DATA-BACKUP-RESTORE.md](../../../../docs/operations/STAGING-DATA-BACKUP-RESTORE.md) for Postgres WAL (separate from TF state).
+See also [STAGING-DATA-BACKUP-RESTORE.md](../../../../operations/STAGING-DATA-BACKUP-RESTORE.md) for Postgres WAL (separate from TF state).
 
 ---
 

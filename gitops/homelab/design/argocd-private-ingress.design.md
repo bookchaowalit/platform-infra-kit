@@ -1,3 +1,11 @@
+---
+title: "Design only: private Argo CD Ingress (argocd.homelab.local)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Design only: private Argo CD Ingress (argocd.homelab.local)."
+---
+
 # Design only: private Argo CD Ingress (`argocd.homelab.local`)
 
 **Status:** design-only — **do not apply** without written human approval  
@@ -92,4 +100,4 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 # browser: https://localhost:8080
 ```
 
-See [HOMELAB-URL-CATALOG.md](../../../../../docs/operations/HOMELAB-URL-CATALOG.md).
+See [HOMELAB-URL-CATALOG.md](../../../../../operations/HOMELAB-URL-CATALOG.md).

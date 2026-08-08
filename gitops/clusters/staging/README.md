@@ -1,3 +1,11 @@
+---
+title: "Cluster: staging"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Cluster: staging."
+---
+
 # Cluster: staging
 
 | Field | Value |
@@ -20,5 +28,5 @@ with lower replica floors and staging TLS issuers.
 - Gate: `gitops/applications/values/staging/DEPLOYMENT.md`
 
 See [ENVIRONMENT-CONTRACT.md](../../../ENVIRONMENT-CONTRACT.md),
-[PRODUCTION-GAPS.md](../../../../../docs/operations/PRODUCTION-GAPS.md),
-[PROVIDER-DECISION.md](../../../../../docs/operations/PROVIDER-DECISION.md).
+[PRODUCTION-GAPS.md](../../../../../operations/PRODUCTION-GAPS.md),
+[PROVIDER-DECISION.md](../../../../../operations/PROVIDER-DECISION.md).

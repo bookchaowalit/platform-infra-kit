@@ -134,7 +134,7 @@ spec:
     minReplicas: 1
     maxReplicas: 2
     targetCPUUtilizationPercentage: 80
-  runbook: docs/operations/{name.upper().replace('-', '_')}-PILOT-RUNBOOK.md
+  runbook: operations/{name.upper().replace('-', '_')}-PILOT-RUNBOOK.md
   values_customized: false
 """
     # Fix run_as_user null representation and runbook path convention
@@ -142,9 +142,9 @@ spec:
         content = content.replace("  run_as_user: null\n", "")
     runbook_name = name.upper().replace("-", "-")
     # Prefer NAME with hyphens uppercased poorly; use stable slug style
-    runbook_rel = f"docs/operations/{name.upper()}-PILOT-RUNBOOK.md"
+    runbook_rel = f"operations/{name.upper()}-PILOT-RUNBOOK.md"
     # booknbook style is BOOKNBOOK; ai-doc is AI-DOC-ASSISTANT
-    runbook_rel = f"docs/operations/{name.upper()}-PILOT-RUNBOOK.md"
+    runbook_rel = f"operations/{name.upper()}-PILOT-RUNBOOK.md"
     content = re.sub(
         r"runbook:.*",
         f"runbook: {runbook_rel}",
@@ -228,7 +228,7 @@ def main() -> int:
         run_as = spec.get("run_as_user")
         run_as_s = str(run_as) if run_as not in (None, "", "null") else ""
         values_customized = bool(spec.get("values_customized"))
-        runbook = str(spec.get("runbook", f"docs/operations/{name.upper()}-PILOT-RUNBOOK.md"))
+        runbook = str(spec.get("runbook", f"operations/{name.upper()}-PILOT-RUNBOOK.md"))
     else:
         if not args.source_path:
             print("ERROR: --source-path required for new apps", file=sys.stderr)
@@ -254,7 +254,7 @@ def main() -> int:
         mem_lim = args.memory_limit
         run_as_s = args.run_as_user
         values_customized = False
-        runbook = f"docs/operations/{name.upper()}-PILOT-RUNBOOK.md"
+        runbook = f"operations/{name.upper()}-PILOT-RUNBOOK.md"
 
     mapping = {
         "APP_NAME": name,

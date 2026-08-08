@@ -35,5 +35,5 @@ spec:
     minReplicas: 1
     maxReplicas: 2
     targetCPUUtilizationPercentage: 80
-  runbook: docs/operations/BOOKNBOOK-PILOT-RUNBOOK.md
+  runbook: operations/BOOKNBOOK-PILOT-RUNBOOK.md
   values_customized: true

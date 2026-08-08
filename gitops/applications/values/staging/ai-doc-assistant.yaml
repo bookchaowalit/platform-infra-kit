@@ -4,8 +4,8 @@
 # and do not put real secrets or production hostnames here.
 #
 # Durable data plane is OUTSIDE this chart (Postgres, vector, S3). See:
-#   docs/operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md
-#   docs/operations/STAGING-DATA-BACKUP-RESTORE.md
+#   operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md
+#   operations/STAGING-DATA-BACKUP-RESTORE.md
 #   infra/platform/DATA-CONTRACT.md
 #
 # Enable only after ENVIRONMENT-CONTRACT gates pass, data plane is provisioned,
@@ -27,7 +27,7 @@ soloEmpire:
     chromaEmptyDirAllowed: false
     uploadsEmptyDirAllowed: false
     minioInClusterAllowed: false
-    backupRestoreDoc: docs/operations/STAGING-DATA-BACKUP-RESTORE.md
+    backupRestoreDoc: operations/STAGING-DATA-BACKUP-RESTORE.md
     # Homelab remains DEMO_ONLY; never copy emptyDir chroma into staging.
     homelabDemoOnly: true
 

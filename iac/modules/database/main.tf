@@ -77,7 +77,7 @@ resource "terraform_data" "pitr_plan" {
     listen     = "private_network_only"
     pitr       = local.pitr
     restore = {
-      procedure  = "docs/operations/STAGING-DATA-BACKUP-RESTORE.md"
+      procedure  = "operations/STAGING-DATA-BACKUP-RESTORE.md"
       drill_days = local.pitr.restore_drill_days
     }
     note = "PITR requires object-storage credentials delivered via secret manager, not Git."

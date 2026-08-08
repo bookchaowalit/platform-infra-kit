@@ -1,3 +1,11 @@
+---
+title: "Bootstrap state root (fsn1)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Bootstrap state root (fsn1)."
+---
+
 # Bootstrap state root (fsn1)
 
 Records **encrypted remote state** policy for Solo Empire staging.  
