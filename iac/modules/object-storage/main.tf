@@ -37,6 +37,6 @@ resource "terraform_data" "buckets" {
       public_acls     = "forbidden"
     }
     note = var.enabled ? "apply requires S3 credentials via env (not Git)" : "object-storage-disabled"
-    docs = "docs/operations/STAGING-DATA-BACKUP-RESTORE.md"
+    docs = "operations/STAGING-DATA-BACKUP-RESTORE.md"
   }
 }
