@@ -1,3 +1,11 @@
+---
+title: "Kyverno security policies"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Kyverno security policies."
+---
+
 # Kyverno security policies
 
 All policies in this directory start in **`validationFailureAction: Audit`**.

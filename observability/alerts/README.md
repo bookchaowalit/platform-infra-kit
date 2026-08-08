@@ -1,3 +1,11 @@
+---
+title: "Homelab / platform alert designs (design-only)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Homelab / platform alert designs (design-only)."
+---
+
 # Homelab / platform alert designs (design-only)
 
 **Status:** Design documentation only  

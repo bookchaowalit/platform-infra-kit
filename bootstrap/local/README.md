@@ -1,3 +1,11 @@
+---
+title: "Local Kubernetes Platform Bootstrap"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Local Kubernetes Platform Bootstrap."
+---
+
 # Local Kubernetes Platform Bootstrap
 
 This bootstrap creates a disposable local Kubernetes environment for validating
@@ -47,8 +55,8 @@ mount path is not used.
 
 See:
 
-- [AI-DOC-ASSISTANT-PILOT-RUNBOOK.md](../../../../docs/operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md)
-- [BOOKNBOOK-PILOT-RUNBOOK.md](../../../../docs/operations/BOOKNBOOK-PILOT-RUNBOOK.md)
+- [AI-DOC-ASSISTANT-PILOT-RUNBOOK.md](../../../../operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md)
+- [BOOKNBOOK-PILOT-RUNBOOK.md](../../../../operations/BOOKNBOOK-PILOT-RUNBOOK.md)
 
 ### Dual-pilot regression + booknbook smoke
 
@@ -66,7 +74,7 @@ NS=apps-booknbook-dev APP=booknbook ARGO_APP=booknbook-dev ./verify-pilot-resili
 
 Covers restart, scale, self-heal, rollback, dummy secret rotation, NetworkPolicy
 deny, and (for ai-doc) Chroma emptyDir data loss. Decision record:
-[AI-DOC-ASSISTANT-DATA-DECISION.md](../../../../docs/operations/AI-DOC-ASSISTANT-DATA-DECISION.md).
+[AI-DOC-ASSISTANT-DATA-DECISION.md](../../../../operations/AI-DOC-ASSISTANT-DATA-DECISION.md).
 
 Apply the local audit policies and platform boundary after installation:
 

@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-DOCS = ROOT / "docs" / "operations"
+DOCS = ROOT / "operations"
 BOOT = ROOT / "infra" / "platform" / "bootstrap" / "homelab"
 
 CATALOG = DOCS / "HOMELAB-URL-CATALOG.md"

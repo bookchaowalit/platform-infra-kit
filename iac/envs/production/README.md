@@ -1,3 +1,11 @@
+---
+title: "Production IaC root — DISABLED"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Production IaC root — DISABLED."
+---
+
 # Production IaC root — **DISABLED**
 
 Production infrastructure is **not implemented** in this phase.

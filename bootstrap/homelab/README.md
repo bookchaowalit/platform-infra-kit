@@ -1,3 +1,11 @@
+---
+title: "Homelab bootstrap (private registry + app onboard)"
+tags: [documentation, infra]
+created: 2026-08-02
+updated: 2026-08-08
+description: "Documentation for Homelab bootstrap (private registry + app onboard)."
+---
+
 # Homelab bootstrap (private registry + app onboard)
 
 Non-production helpers for:

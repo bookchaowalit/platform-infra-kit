@@ -1,3 +1,11 @@
+---
+title: "Application Data Contract"
+tags: [documentation, infra]
+created: 2026-08-02
+updated: 2026-08-08
+description: "Documentation for Application Data Contract."
+---
+
 # Application Data Contract
 
 This contract is an approval gate for applications entering the Kubernetes
@@ -121,14 +129,14 @@ only after the durable lake write.
 - **Approved local pilots** (each must declare an explicit `data_contract`):
   | App | Namespace | Data contract | Runbook |
   |-----|-----------|---------------|---------|
-  | ai-doc-assistant | `apps-ai-doc-assistant-dev` | pilot-local | `docs/operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md` |
-  | booknbook | `apps-booknbook-dev` | pilot-local | `docs/operations/BOOKNBOOK-PILOT-RUNBOOK.md` |
+  | ai-doc-assistant | `apps-ai-doc-assistant-dev` | pilot-local | `operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md` |
+  | booknbook | `apps-booknbook-dev` | pilot-local | `operations/BOOKNBOOK-PILOT-RUNBOOK.md` |
 - Homelab ai-doc-assistant: **DEMO_ONLY** — see
-  `docs/operations/AI-DOC-ASSISTANT-DATA-READINESS.md` and
-  `docs/operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`.
+  `operations/AI-DOC-ASSISTANT-DATA-READINESS.md` and
+  `operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`.
 - Catalog: `infra/platform/gitops/applications/catalog/apps.yaml` lists approved pilots only.
 - Onboarding workflow (templates, guards, deploy): `infra/platform/onboarding/README.md`.
 - Staging values under `gitops/applications/values/staging/` with
   `soloEmpire.deploymentEnabled: false` (no cluster, no deploy).
-- Staging backup/restore design: `docs/operations/STAGING-DATA-BACKUP-RESTORE.md`.
+- Staging backup/restore design: `operations/STAGING-DATA-BACKUP-RESTORE.md`.
 - booknbook pilot data: no managed DB; optional external Solo Empire API only.

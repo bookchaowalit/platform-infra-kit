@@ -1,7 +1,15 @@
+---
+title: "Infrastructure as Code (OpenTofu)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Infrastructure as Code (OpenTofu)."
+---
+
 # Infrastructure as Code (OpenTofu)
 
 Single-region **staging** implementation for Solo Empire.  
-**Provider path:** Hetzner Cloud + **k3s** (`fsn1`) per [PROVIDER-DECISION.md](../../../docs/operations/PROVIDER-DECISION.md).  
+**Provider path:** Hetzner Cloud + **k3s** (`fsn1`) per [PROVIDER-DECISION.md](../../../operations/PROVIDER-DECISION.md).  
 **Production:** disabled. **Multi-cloud:** not implemented.  
 **Default:** `provision = false` — modules validate/plan without creating resources.
 
@@ -64,7 +72,7 @@ bash infra/platform/iac/scripts/plan-staging.sh          # provision=false only
 ```
 
 Registry TLS: `modules/registry/README.md`.  
-Runbook: [STAGING-INFRA-RUNBOOK.md](../../../docs/operations/STAGING-INFRA-RUNBOOK.md).
+Runbook: [STAGING-INFRA-RUNBOOK.md](../../../operations/STAGING-INFRA-RUNBOOK.md).
 
 ## Sensitive data
 

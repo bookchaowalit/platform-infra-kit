@@ -1,3 +1,11 @@
+---
+title: "Application Onboarding (local k3d pilots)"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Application Onboarding (local k3d pilots)."
+---
+
 # Application Onboarding (local k3d pilots)
 
 Reusable workflow for adding a **business application** to the Solo Empire
@@ -14,7 +22,7 @@ production, or real secrets.
 | Argo Application template | `infra/platform/bootstrap/local/applications/<name>-dev.yaml.tpl` |
 | Namespace destination | AppProject allows `apps-<name>-dev` (CreateNamespace) |
 | Deploy entrypoint | `deploy-app.sh <name>` (wrappers keep old names) |
-| Pilot runbook | `docs/operations/<NAME>-PILOT-RUNBOOK.md` |
+| Pilot runbook | `operations/<NAME>-PILOT-RUNBOOK.md` |
 
 ## Prerequisites
 

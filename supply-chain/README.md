@@ -1,3 +1,11 @@
+---
+title: "Supply-chain security baseline"
+tags: [documentation, infra]
+created: 2026-08-03
+updated: 2026-08-08
+description: "Documentation for Supply-chain security baseline."
+---
+
 # Supply-chain security baseline
 
 This directory describes the image supply-chain boundary for Solo Empire
