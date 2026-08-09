@@ -132,6 +132,8 @@ echo "==> Package pilot values into chart path"
 mkdir -p "$ROOT/infra/platform/helm/solo-app/pilot"
 cp "$ROOT/infra/platform/gitops/applications/values/dev/common.yaml" \
   "$ROOT/infra/platform/helm/solo-app/pilot/dev-common.yaml"
+# Keep GitOps values canonical. Pilot values are disposable local renderings
+# consumed by the temporary Git source created below.
 python3 - <<PY
 from pathlib import Path
 import re
@@ -142,7 +144,6 @@ t = src.read_text()
 t = re.sub(r"^(  repository:).*$", f"  repository: {repo}", t, flags=re.M)
 t = re.sub(r"^(  tag:).*$", f'  tag: "{tag}"', t, flags=re.M)
 t = re.sub(r"^(  pullPolicy:).*$", "  pullPolicy: Always", t, flags=re.M)
-src.write_text(t)
 Path("$ROOT/infra/platform/helm/solo-app/pilot/${APP_NAME}-dev.yaml").write_text(t)
 print("packaged", repo, tag)
 PY

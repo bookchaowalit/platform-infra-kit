@@ -22,6 +22,7 @@ infra/platform/
 ├── README.md                 ← this file
 ├── bootstrap/local/          ← disposable local k3d/K3s bootstrap
 ├── helm/solo-app/            ← reusable application Helm chart
+│   └── pilot/                ← generated local values; never the GitOps source
 ├── gitops/                   ← Argo CD ApplicationSets + app catalog
 │   ├── clusters/{dev,staging,production}/
 │   └── applications/
@@ -55,6 +56,12 @@ export PATH="$HOME/.local/bin:$PATH"
 ```
 
 This installs platform controllers only. It does not deploy business apps.
+
+`helm/solo-app/pilot/` is disposable output. The local deploy script copies
+the canonical values from `gitops/applications/values/dev/`, applies only the
+local registry image override, and rebuilds this directory before creating the
+temporary Git source. It is ignored so deployment cannot dirty or duplicate the
+canonical GitOps values.
 
 ### Manifest-only validation
 
