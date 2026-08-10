@@ -30,7 +30,7 @@ VALUES_STAGING = GITOPS / "values" / "staging"
 CATALOG = GITOPS / "catalog" / "apps.yaml"
 INVENTORY = PLATFORM / "APP-INVENTORY.yaml"
 APPS_DIR = ONBOARDING / "apps"
-DOCS_OPS = ROOT / "operations"
+DOCS_PLATFORM = ROOT / "operations" / "platform"
 
 sys.path.insert(0, str(SCRIPTS))
 
@@ -456,11 +456,11 @@ def validate_docs_and_contract(c: Checker) -> None:
         "PROVIDER-DECISION.md",
         "STAGING-INFRA-RUNBOOK.md",
     ):
-        path = DOCS_OPS / rel
+        path = DOCS_PLATFORM / rel
         if path.exists():
-            c.ok(f"operations/{rel} present")
+            c.ok(f"operations/platform/{rel} present")
         else:
-            c.fail(f"operations/{rel} missing")
+            c.fail(f"operations/platform/{rel} missing")
 
     iac_root = PLATFORM / "iac" / "envs" / "staging" / "fsn1" / "main.tf"
     if iac_root.exists():
@@ -478,7 +478,7 @@ def validate_docs_and_contract(c: Checker) -> None:
     else:
         c.fail("production IaC must remain disabled (README)")
 
-    gaps = DOCS_OPS / "PRODUCTION-GAPS.md"
+    gaps = DOCS_PLATFORM / "PRODUCTION-GAPS.md"
     if gaps.exists():
         gtext = gaps.read_text(encoding="utf-8")
         for topic in (

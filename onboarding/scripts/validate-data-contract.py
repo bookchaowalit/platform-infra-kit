@@ -29,7 +29,9 @@ ROOT = PLATFORM.parent.parent
 GITOPS = PLATFORM / "gitops" / "applications"
 VALUES_STAGING = GITOPS / "values" / "staging"
 HELM = PLATFORM / "helm" / "solo-app"
-DOCS_OPS = ROOT / "operations"
+DOCS_PLATFORM = ROOT / "operations" / "platform"
+DOCS_AI = ROOT / "operations" / "ai"
+DOCS_RUNBOOKS = ROOT / "operations" / "runbooks"
 INVENTORY = PLATFORM / "APP-INVENTORY.yaml"
 DATA_CONTRACT_DOC = PLATFORM / "DATA-CONTRACT.md"
 HOMELAB_VALUES = HELM / "homelab" / "ai-doc-assistant.yaml"
@@ -82,10 +84,10 @@ def validate_docs(c: Checker) -> None:
     print("\n[data-contract] Required documentation")
     required = {
         "DATA-CONTRACT.md": DATA_CONTRACT_DOC,
-        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_OPS / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
-        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_OPS / "STAGING-DATA-BACKUP-RESTORE.md",
-        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_OPS / "AI-DOC-ASSISTANT-DATA-READINESS.md",
-        "PRODUCTION-GAPS.md": DOCS_OPS / "PRODUCTION-GAPS.md",
+        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_AI / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
+        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_RUNBOOKS / "STAGING-DATA-BACKUP-RESTORE.md",
+        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_AI / "AI-DOC-ASSISTANT-DATA-READINESS.md",
+        "PRODUCTION-GAPS.md": DOCS_PLATFORM / "PRODUCTION-GAPS.md",
     }
     for label, path in required.items():
         if path.exists():
@@ -93,7 +95,7 @@ def validate_docs(c: Checker) -> None:
         else:
             c.fail(f"missing: {label}")
 
-    restore = _read(DOCS_OPS / "STAGING-DATA-BACKUP-RESTORE.md")
+    restore = _read(DOCS_RUNBOOKS / "STAGING-DATA-BACKUP-RESTORE.md")
     for needle, label in (
         ("180", "backups lifecycle / retention mention"),
         ("7 days", "PITR retention 7 days"),
@@ -110,7 +112,7 @@ def validate_docs(c: Checker) -> None:
         else:
             c.fail(f"restore doc missing {label} ({needle!r})")
 
-    plan = _read(DOCS_OPS / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md")
+    plan = _read(DOCS_AI / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md")
     for needle in (
         "DEMO_ONLY",
         "PostgreSQL",
@@ -314,8 +316,8 @@ def validate_platform_secret_scan(c: Checker) -> None:
         PLATFORM / "gitops" / "applications" / "values" / "staging",
         PLATFORM / "helm" / "solo-app" / "homelab",
         PLATFORM / "DATA-CONTRACT.md",
-        DOCS_OPS / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
-        DOCS_OPS / "STAGING-DATA-BACKUP-RESTORE.md",
+        DOCS_AI / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
+        DOCS_RUNBOOKS / "STAGING-DATA-BACKUP-RESTORE.md",
     ]
     hits: list[str] = []
     for root in roots:

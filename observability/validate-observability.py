@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 OBS = ROOT / "infra" / "platform" / "observability"
 BOOT = ROOT / "infra" / "platform" / "bootstrap" / "homelab"
-DOCS = ROOT / "operations"
+DOCS = ROOT / "operations" / "platform"
 
 SCRIPT = BOOT / "verify-homelab-observability.sh"
 RUNBOOK = DOCS / "HOMELAB-OBSERVABILITY-RUNBOOK.md"

@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-DOCS = ROOT / "operations"
+DOCS = ROOT / "operations" / "platform"
 BOOT = ROOT / "infra" / "platform" / "bootstrap" / "homelab"
 
 DOC = DOCS / "HOMELAB-MULTINODE-READINESS.md"

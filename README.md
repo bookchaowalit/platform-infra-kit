@@ -2,7 +2,7 @@
 title: "Solo Empire Kubernetes Application Platform"
 tags: [documentation, infra]
 created: 2026-08-03
-updated: 2026-08-08
+updated: 2026-08-10
 description: "Documentation for Solo Empire Kubernetes Application Platform."
 ---
 
@@ -82,6 +82,7 @@ python3 infra/tests/platform/platform_validation_test.py
 
 ## Related docs
 
+- [Technology Platform and Security Evidence](../../systems/architecture/technology-capability-evidence-platform-security.md)
 - [Current platform status](../../operations/platform/PLATFORM-STATUS.md)
 - [Cost plan](../../operations/platform/COST-PLAN.md)
 - [Production cost comparison](../../operations/platform/PRODUCTION-COST-COMPARISON.md)
