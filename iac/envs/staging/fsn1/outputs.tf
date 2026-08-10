@@ -117,12 +117,12 @@ output "next_steps" {
     "Confirm allow_ssh_cidrs and cost estimate within €80",
     "Export kubeconfig; register Argo CD using output.argocd (no tokens in outputs)",
     "Load secrets (registry password, postgres) from state/secret manager — never Git",
-    "Run restore drill per operations/STAGING-DATA-BACKUP-RESTORE.md",
+    "Run restore drill per operations/runbooks/STAGING-DATA-BACKUP-RESTORE.md",
     "Flip soloEmpire.deploymentEnabled only after restore drill",
     ] : [
     "provision=false: scaffold plan only — local backend OK",
     "Before provision=true: bootstrap state bucket + backend.hcl (encrypt+lockfile)",
-    "See operations/STAGING-INFRA-RUNBOOK.md and PRE-APPLY-AUDIT.md",
+    "See operations/platform/STAGING-INFRA-RUNBOOK.md and PRE-APPLY-AUDIT.md",
   ]
 }
 

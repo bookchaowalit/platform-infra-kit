@@ -15,8 +15,8 @@ or managed database is created by this document.**
 Staging values may exist in Git with **`soloEmpire.deploymentEnabled: false`**.
 That is readiness scaffolding, not a deployment.
 
-**Related:** [PRODUCTION-GAPS.md](../../operations/PRODUCTION-GAPS.md),
-[PROVIDER-DECISION.md](../../operations/PROVIDER-DECISION.md),
+**Related:** [PRODUCTION-GAPS.md](../../operations/platform/PRODUCTION-GAPS.md),
+[PROVIDER-DECISION.md](../../operations/platform/PROVIDER-DECISION.md),
 [DATA-CONTRACT.md](./DATA-CONTRACT.md),
 [onboarding/README.md](./onboarding/README.md).
 
@@ -121,7 +121,7 @@ Rules:
 Each approved app must declare `data_contract` in `APP-INVENTORY.yaml`.
 Staging values restate data intent under `soloEmpire.data` (see
 `dataContract: staging-durable-planned` for ai-doc-assistant).
-Durable design: `operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`.
+Durable design: `operations/ai/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`.
 
 ---
 
@@ -199,7 +199,7 @@ registers a real cluster (out of scope for this contract’s preparation work).
 Before `production` is enabled, the platform must have:
 
 - managed Kubernetes **or** an explicitly accepted self-managed equivalent
-  ([PROVIDER-DECISION.md](../../operations/PROVIDER-DECISION.md))
+  ([PROVIDER-DECISION.md](../../operations/platform/PROVIDER-DECISION.md))
 - IaC for network, cluster, node pools, DNS, registry, data, and secrets
 - Argo CD registered with the target cluster
 - External Secrets connected to the selected secret manager
@@ -208,7 +208,7 @@ Before `production` is enabled, the platform must have:
 - metrics, logs, traces, alerts, and cost allocation
 - documented rollback and incident ownership
 
-See [PRODUCTION-GAPS.md](../../operations/PRODUCTION-GAPS.md) for the open list.
+See [PRODUCTION-GAPS.md](../../operations/platform/PRODUCTION-GAPS.md) for the open list.
 
 ---
 

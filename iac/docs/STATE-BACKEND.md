@@ -159,7 +159,7 @@ aws s3api get-object --bucket … --key staging/fsn1/terraform.tfstate \
 3. `tofu plan` (no apply) and reconcile drift.
 4. Document incident; rotate credentials if compromise suspected.
 
-See also [STAGING-DATA-BACKUP-RESTORE.md](../../../../operations/STAGING-DATA-BACKUP-RESTORE.md) for Postgres WAL (separate from TF state).
+See also [STAGING-DATA-BACKUP-RESTORE.md](../../../../operations/runbooks/STAGING-DATA-BACKUP-RESTORE.md) for Postgres WAL (separate from TF state).
 
 ---
 

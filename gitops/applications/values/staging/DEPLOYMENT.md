@@ -24,13 +24,13 @@ This directory holds staging-ready Helm values only. It does **not** deploy.
 
 ## Enablement checklist (manual, future)
 
-- [ ] Provider decision accepted (`operations/PROVIDER-DECISION.md`)
+- [ ] Provider decision accepted (`operations/platform/PROVIDER-DECISION.md`)
 - [ ] Environment contract gates for staging satisfied
 - [ ] Managed data provisioned **outside** the app chart (Postgres, vector, S3)
 - [ ] ai-doc-assistant durable plan gates satisfied
-      (`operations/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`)
+      (`operations/ai/AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md`)
 - [ ] Backup/PITR + restore drill logged
-      (`operations/STAGING-DATA-BACKUP-RESTORE.md`)
+      (`operations/runbooks/STAGING-DATA-BACKUP-RESTORE.md`)
 - [ ] Staging values: no emptyDir for chroma/uploads; ESO refs present
 - [ ] External Secrets ClusterSecretStore live
 - [ ] Image repository points at real shared registry with immutable tags

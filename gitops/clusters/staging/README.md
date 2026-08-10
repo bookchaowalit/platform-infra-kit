@@ -28,5 +28,5 @@ with lower replica floors and staging TLS issuers.
 - Gate: `gitops/applications/values/staging/DEPLOYMENT.md`
 
 See [ENVIRONMENT-CONTRACT.md](../../../ENVIRONMENT-CONTRACT.md),
-[PRODUCTION-GAPS.md](../../../../../operations/PRODUCTION-GAPS.md),
-[PROVIDER-DECISION.md](../../../../../operations/PROVIDER-DECISION.md).
+[PRODUCTION-GAPS.md](../../../../../operations/platform/PRODUCTION-GAPS.md),
+[PROVIDER-DECISION.md](../../../../../operations/platform/PROVIDER-DECISION.md).

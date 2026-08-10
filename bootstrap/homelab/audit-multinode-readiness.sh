@@ -401,7 +401,7 @@ for phost in "${PX_HOSTS[@]}"; do
         log "  · or from workstation after interactive login works:"
         log "  ·   ssh-copy-id -i ~/.ssh/bookchaowalit.pub root@${phost}"
         log "  · verify: ssh -o BatchMode=yes -i ~/.ssh/bookchaowalit root@${phost} hostname"
-        log "  · full steps: operations/HOMELAB-MULTINODE-READINESS.md"
+        log "  · full steps: operations/platform/HOMELAB-MULTINODE-READINESS.md"
       else
         log "  · add operator ED25519 public key to root@${phost}:~/.ssh/authorized_keys"
       fi
@@ -430,7 +430,7 @@ for line in "${REPORT[@]}"; do
 done
 log ""
 log "Safety: no k3s agent/server install, no kubectl apply, no tofu apply, no reboot."
-log "Next: see operations/HOMELAB-MULTINODE-READINESS.md decision gate."
+log "Next: see operations/platform/HOMELAB-MULTINODE-READINESS.md decision gate."
 log "============================================================"
 
 # Fail only if the live single-node control plane is unhealthy.

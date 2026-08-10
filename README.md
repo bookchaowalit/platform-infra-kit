@@ -77,17 +77,17 @@ helm template demo infra/platform/helm/solo-app \
   | kubeconform -strict -ignore-missing-schemas -
 
 # Platform test suite (stdlib Python; no cluster required)
-python3 infra/tests/platform_validation_test.py
+python3 infra/tests/platform/platform_validation_test.py
 ```
 
 ## Related docs
 
-- [Current platform status](../../operations/PLATFORM-STATUS.md)
-- [Cost plan](../../operations/COST-PLAN.md)
-- [Production cost comparison](../../operations/PRODUCTION-COST-COMPARISON.md)
-- [Portfolio execution plan](../../operations/PORTFOLIO-EXECUTION-PLAN.md)
-- [Homelab plan](../../operations/HOMELAB-PLAN.md)
-- [Kubernetes Platform Readiness](../../operations/KUBERNETES-PLATFORM-READINESS.md)
+- [Current platform status](../../operations/platform/PLATFORM-STATUS.md)
+- [Cost plan](../../operations/platform/COST-PLAN.md)
+- [Production cost comparison](../../operations/platform/PRODUCTION-COST-COMPARISON.md)
+- [Portfolio execution plan](../../operations/evidence/PORTFOLIO-EXECUTION-PLAN.md)
+- [Homelab plan](../../operations/platform/HOMELAB-PLAN.md)
+- [Kubernetes Platform Readiness](../../operations/platform/KUBERNETES-PLATFORM-READINESS.md)
 - [IaC design](./iac/README.md)
 - [Self-hosted Docker lab](../self-hosted-stack/README.md) (local learning only)
 - [Service ownership boundaries](../self-hosted-stack/SERVICE-OWNERSHIP.md)
@@ -104,8 +104,8 @@ Reusable onboarding: [`onboarding/README.md`](./onboarding/README.md).
 
 | App | Namespace | Argo CD | Data contract | Runbook |
 |-----|-----------|---------|---------------|---------|
-| **ai-doc-assistant** | `apps-ai-doc-assistant-dev` | `ai-doc-assistant-dev` | pilot-local | [runbook](../../operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md) |
-| **booknbook** | `apps-booknbook-dev` | `booknbook-dev` | pilot-local | [runbook](../../operations/BOOKNBOOK-PILOT-RUNBOOK.md) |
+| **ai-doc-assistant** | `apps-ai-doc-assistant-dev` | `ai-doc-assistant-dev` | pilot-local | [runbook](../../operations/ai/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md) |
+| **booknbook** | `apps-booknbook-dev` | `booknbook-dev` | pilot-local | [runbook](../../operations/ai/BOOKNBOOK-PILOT-RUNBOOK.md) |
 
 ```bash
 # After platform bootstrap on k3d-solo-dev:
@@ -131,9 +131,9 @@ connected to production app data.
 | Doc | Purpose |
 |-----|---------|
 | [ENVIRONMENT-CONTRACT.md](./ENVIRONMENT-CONTRACT.md) | Namespace, registry, secrets, ingress, data, budgets |
-| [PRODUCTION-GAPS.md](../../operations/PRODUCTION-GAPS.md) | Open production gaps |
-| [PROVIDER-DECISION.md](../../operations/PROVIDER-DECISION.md) | Locked staging: Hetzner k3s fsn1 |
-| [STAGING-INFRA-RUNBOOK.md](../../operations/STAGING-INFRA-RUNBOOK.md) | Plan-only ops + enablement checklist |
+| [PRODUCTION-GAPS.md](../../operations/platform/PRODUCTION-GAPS.md) | Open production gaps |
+| [PROVIDER-DECISION.md](../../operations/platform/PROVIDER-DECISION.md) | Locked staging: Hetzner k3s fsn1 |
+| [STAGING-INFRA-RUNBOOK.md](../../operations/platform/STAGING-INFRA-RUNBOOK.md) | Plan-only ops + enablement checklist |
 | [iac/README.md](./iac/README.md) | OpenTofu modules + plan script |
 | [values/staging/DEPLOYMENT.md](./gitops/applications/values/staging/DEPLOYMENT.md) | App deploy gate |
 

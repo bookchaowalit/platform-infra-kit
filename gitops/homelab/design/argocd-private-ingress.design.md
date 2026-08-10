@@ -100,4 +100,4 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 # browser: https://localhost:8080
 ```
 
-See [HOMELAB-URL-CATALOG.md](../../../../../operations/HOMELAB-URL-CATALOG.md).
+See [HOMELAB-URL-CATALOG.md](../../../../../operations/platform/HOMELAB-URL-CATALOG.md).

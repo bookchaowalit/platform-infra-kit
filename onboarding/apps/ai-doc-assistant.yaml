@@ -34,6 +34,6 @@ spec:
     minReplicas: 1
     maxReplicas: 2
     targetCPUUtilizationPercentage: 80
-  runbook: operations/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md
+  runbook: operations/ai/AI-DOC-ASSISTANT-PILOT-RUNBOOK.md
   # Hand-tuned values (volumes, chroma emptyDir) live in values/dev; do not overwrite
   values_customized: true

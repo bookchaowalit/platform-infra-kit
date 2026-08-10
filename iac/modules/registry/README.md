@@ -56,4 +56,4 @@ Root module passes `ca_cert_pem` into `k3s-cluster` and `node-pools` cloud-init:
 ## Enablement
 
 Requires root `provision=true` + `ssh_key_ids` + `allow_ssh_cidrs`.  
-See `operations/STAGING-INFRA-RUNBOOK.md`.
+See `operations/platform/STAGING-INFRA-RUNBOOK.md`.

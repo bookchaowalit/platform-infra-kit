@@ -27,5 +27,5 @@ terraform {
 }
 
 # Single-region staging: Hetzner Cloud Falkenstein (fsn1) + k3s.
-# Provider decision: VPS + k3s (see operations/PROVIDER-DECISION.md).
+# Provider decision: VPS + k3s (see operations/platform/PROVIDER-DECISION.md).
 # Multi-cloud is explicitly out of scope.

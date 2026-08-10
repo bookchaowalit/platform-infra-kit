@@ -173,7 +173,7 @@ log ""
 log "Tips:"
 log "  DRY_RUN=1 bash infra/platform/bootstrap/homelab/sync-homelab-dns.sh"
 log "  USE_RESOLVE=1 bash .../verify-homelab-urls.sh   # if /etc/hosts not synced"
-log "  Controllers: see operations/HOMELAB-URL-CATALOG.md (port-forward / kubectl)"
+log "  Controllers: see operations/platform/HOMELAB-URL-CATALOG.md (port-forward / kubectl)"
 log "============================================================"
 
 [[ "$FAIL" -eq 0 ]]
