@@ -63,16 +63,26 @@ variable "estimate" {
   })
   description = "Monthly EUR estimate for default sizing (documentation + guard)."
   default = {
-    # Approximate Hetzner list prices mid-2026 for fsn1 — verify before apply.
+    # Re-priced 2026-08-12 against Hetzner's price-adjustment table
+    # (docs.hetzner.com/general/infrastructure-and-availability/price-adjustment),
+    # effective 15 June 2026. That table no longer lists cpx11/cpx21 — the
+    # server_type defaults still used in modules/registry, modules/database,
+    # modules/node-pools, and envs/staging/fsn1 (control_plane_server_type).
+    # Figures below use the nearest listed successor tier by price position
+    # (cpx11-class -> cx23, cpx21-class -> cpx22) as a PLANNING estimate only.
+    # This is inferred from price-tier position, not a confirmed spec match —
+    # an operator must confirm exact vCPU/RAM/disk for the real replacement
+    # type in the Hetzner Console before setting provision=true, and update
+    # server_type in the modules above if the type name actually changed.
     # TLS uses OpenTofu-generated internal CA (no paid public cert cost).
-    control_plane_eur  = 8.0  # cpx21 ~1
-    general_nodes_eur  = 16.0 # 2x cpx21
-    registry_eur       = 4.5  # cpx11 (TLS terminated on-box; no extra LB)
-    postgres_eur       = 8.0  # cpx21
-    volumes_eur        = 4.0  # ~80GB total @ ~€0.044/GB
-    object_storage_eur = 5.0  # backups + assets low usage
-    load_balancer_eur  = 5.4  # optional public ingress LB only (not registry)
-    dns_eur            = 0.0  # DNS disabled until approved domain
-    contingency_eur    = 8.0  # buffer for traffic/snapshots
+    control_plane_eur  = 19.49 # cpx22 planning figure (was cpx21 @ €8.00)
+    general_nodes_eur  = 38.98 # 2x cpx22 planning figure (was 2x cpx21 @ €16.00)
+    registry_eur       = 5.49  # cx23 planning figure (was cpx11 @ €4.50)
+    postgres_eur       = 19.49 # cpx22 planning figure (was cpx21 @ €8.00)
+    volumes_eur        = 4.0   # ~80GB total @ ~€0.044/GB — unverified, not in the re-priced table
+    object_storage_eur = 5.0   # backups + assets low usage — unverified, not in the re-priced table
+    load_balancer_eur  = 5.4   # optional public ingress LB only — unverified, not in the re-priced table
+    dns_eur            = 0.0   # DNS disabled until approved domain
+    contingency_eur    = 8.0   # buffer for traffic/snapshots
   }
 }

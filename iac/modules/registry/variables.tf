@@ -15,7 +15,10 @@ variable "location" {
 variable "server_type" {
   type        = string
   description = "Small VM hosting a private distribution registry (or Harbor later)."
-  default     = "cpx11"
+  # cpx11 is absent from Hetzner's price-adjustment table effective
+  # 15 June 2026 — confirm the current replacement type in the Hetzner
+  # Console before provision=true (see modules/cost/variables.tf).
+  default = "cpx11"
 }
 
 variable "ssh_key_ids" {

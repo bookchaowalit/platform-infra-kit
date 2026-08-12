@@ -35,6 +35,9 @@ variable "ssh_key_ids" {
 
 variable "server_type" {
   type    = string
+  # cpx21 is absent from Hetzner's price-adjustment table effective
+  # 15 June 2026 — confirm the current replacement type in the Hetzner
+  # Console before provision=true (see modules/cost/variables.tf).
   default = "cpx21"
 }
 

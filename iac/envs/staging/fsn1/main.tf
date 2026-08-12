@@ -77,6 +77,11 @@ module "k3s_cluster" {
   private_ip                = local.cp_private_ip
   firewall_id               = module.network.firewall_nodes_id
   ssh_key_ids               = var.ssh_key_ids
+  # cpx21 does not appear in Hetzner's price-adjustment table effective
+  # 15 June 2026 (docs.hetzner.com/general/infrastructure-and-availability/
+  # price-adjustment). Confirm the exact current replacement type in the
+  # Hetzner Console before provision=true; see modules/cost/variables.tf
+  # for the re-priced planning estimate (cpx22 assumed, unverified).
   control_plane_server_type = "cpx21"
   labels                    = local.cost_labels
   registry_hostname         = var.registry_hostname
