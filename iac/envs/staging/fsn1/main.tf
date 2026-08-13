@@ -70,13 +70,13 @@ module "registry" {
 module "k3s_cluster" {
   source = "../../../modules/k3s-cluster"
 
-  enabled                   = var.provision
-  name                      = var.name
-  location                  = var.region
-  network_id                = module.network.network_id
-  private_ip                = local.cp_private_ip
-  firewall_id               = module.network.firewall_nodes_id
-  ssh_key_ids               = var.ssh_key_ids
+  enabled     = var.provision
+  name        = var.name
+  location    = var.region
+  network_id  = module.network.network_id
+  private_ip  = local.cp_private_ip
+  firewall_id = module.network.firewall_nodes_id
+  ssh_key_ids = var.ssh_key_ids
   # cpx21 does not appear in Hetzner's price-adjustment table effective
   # 15 June 2026 (docs.hetzner.com/general/infrastructure-and-availability/
   # price-adjustment). Confirm the exact current replacement type in the

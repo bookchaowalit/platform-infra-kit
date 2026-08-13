@@ -51,7 +51,7 @@ variable "general_count" {
 }
 
 variable "general_server_type" {
-  type    = string
+  type = string
   # cpx21 is absent from Hetzner's price-adjustment table effective
   # 15 June 2026 — confirm the current replacement type in the Hetzner
   # Console before provision=true (see modules/cost/variables.tf).
@@ -65,7 +65,7 @@ variable "system_count" {
 }
 
 variable "system_server_type" {
-  type    = string
+  type = string
   # cpx11 is absent from Hetzner's price-adjustment table effective
   # 15 June 2026 — confirm the current replacement type in the Hetzner
   # Console before provision=true (see modules/cost/variables.tf).
