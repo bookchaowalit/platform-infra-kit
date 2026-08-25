@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "purpose": "read-only multi-PaaS control-plane catalog",
+  "deployment_enabled": false,
+  "write_actions_enabled": false,
+  "write_actions_reason": "Provider mutations remain disabled until an explicit provider, resource, and approval workflow is defined.",
+  "providers": [
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "icon": "▲",
+      "category": "frontend-edge",
+      "dashboard_url": "https://vercel.com/dashboard",
+      "api_docs": "https://vercel.com/docs/rest-api",
+      "credential_env": ["VERCEL_TOKEN"],
+      "optional_env": ["VERCEL_TEAM_ID"],
+      "health_check": "vercel",
+      "read_capabilities": ["api-health", "project-summary", "dashboard-link"],
+      "write_capabilities": []
+    },
+    {
+      "id": "render",
+      "name": "Render",
+      "icon": "◈",
+      "category": "managed-paas",
+      "dashboard_url": "https://dashboard.render.com",
+      "api_docs": "https://render.com/docs/api",
+      "credential_env": ["RENDER_API_KEY"],
+      "optional_env": [],
+      "health_check": "render",
+      "read_capabilities": ["api-health", "service-summary", "dashboard-link"],
+      "write_capabilities": []
+    },
+    {
+      "id": "railway",
+      "name": "Railway",
+      "icon": "🚂",
+      "category": "managed-paas",
+      "dashboard_url": "https://railway.app/dashboard",
+      "api_docs": "https://docs.railway.com/integrations/api",
+      "credential_env": ["RAILWAY_TOKEN", "RAILWAY_API_TOKEN"],
+      "optional_env": ["RAILWAY_WORKSPACE_ID"],
+      "health_check": "railway",
+      "read_capabilities": ["api-health", "workspace-summary", "dashboard-link"],
+      "write_capabilities": []
+    },
+    {
+      "id": "fly-io",
+      "name": "Fly.io",
+      "icon": "✈",
+      "category": "machines-paas",
+      "dashboard_url": "https://fly.io/dashboard",
+      "api_docs": "https://fly.io/docs/machines/api/",
+      "credential_env": ["FLY_API_TOKEN", "FLY_TOKEN"],
+      "optional_env": ["FLY_ORG_SLUG"],
+      "health_check": "fly-io",
+      "read_capabilities": ["api-health", "app-summary", "dashboard-link"],
+      "write_capabilities": []
+    },
+    {
+      "id": "heroku",
+      "name": "Heroku",
+      "icon": "⬡",
+      "category": "managed-paas",
+      "dashboard_url": "https://dashboard.heroku.com",
+      "api_docs": "https://devcenter.heroku.com/articles/platform-api-reference",
+      "credential_env": ["HEROKU_TOKEN", "HEROKU_API_KEY"],
+      "optional_env": [],
+      "health_check": "heroku",
+      "read_capabilities": ["api-health", "account-summary", "dashboard-link"],
+      "write_capabilities": []
+    }
+  ]
+}

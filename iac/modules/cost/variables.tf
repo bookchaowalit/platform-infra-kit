@@ -19,6 +19,17 @@ variable "monthly_budget_eur" {
   default     = 80
 }
 
+variable "general_node_count" {
+  type        = number
+  description = "General worker count represented by the cost estimate; the default estimate assumes two workers."
+  default     = 2
+
+  validation {
+    condition     = var.general_node_count >= 0 && floor(var.general_node_count) == var.general_node_count
+    error_message = "general_node_count must be a non-negative whole number."
+  }
+}
+
 variable "alert_thresholds_percent" {
   type    = list(number)
   default = [50, 80, 100]
@@ -75,6 +86,8 @@ variable "estimate" {
     # type in the Hetzner Console before setting provision=true, and update
     # server_type in the modules above if the type name actually changed.
     # TLS uses OpenTofu-generated internal CA (no paid public cert cost).
+    # general_nodes_eur is the two-worker baseline and is scaled by
+    # general_node_count in main.tf.
     control_plane_eur  = 19.49 # cpx22 planning figure (was cpx21 @ €8.00)
     general_nodes_eur  = 38.98 # 2x cpx22 planning figure (was 2x cpx21 @ €16.00)
     registry_eur       = 5.49  # cx23 planning figure (was cpx11 @ €4.50)

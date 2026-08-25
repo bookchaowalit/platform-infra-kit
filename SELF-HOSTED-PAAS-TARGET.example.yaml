@@ -1,0 +1,35 @@
+# Copy this file to a private operator workspace before filling it in.
+# Do not commit host credentials, private keys, tokens, or passwords here.
+schema_version: solo-empire.self-hosted-paas-target.v1
+decision_status: pending
+
+platform: null # coolify | caprover | dokku
+environment: lab # lab | staging | production
+
+target:
+  provider: null # VPS, Proxmox VM, bare metal, etc.
+  host_id: null
+  region: null
+  operating_system: null
+  architecture: amd64 # amd64 | arm64
+  fresh_host: false
+  ssh_port: 22
+
+network:
+  exposure: private # private | public
+  domain: null
+  dns_owner_approved: false
+  firewall_owner_approved: false
+  allowed_ssh_cidrs: []
+
+durability:
+  backup_destination: null
+  retention_policy: null
+  restore_drill_required: true
+  restore_drill_verified: false
+
+operations:
+  monthly_budget: null
+  monitoring_contact: null
+  rollback_plan: null
+  install_approval: false

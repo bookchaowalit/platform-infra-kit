@@ -31,6 +31,7 @@ module "cost" {
   environment        = "staging"
   region             = var.region
   monthly_budget_eur = var.monthly_budget_eur
+  general_node_count = var.general_node_count
   required_labels    = local.cost_labels
   resource_limits = {
     max_control_planes = 1

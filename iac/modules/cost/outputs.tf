@@ -15,7 +15,7 @@ output "estimate_total_eur" {
 }
 
 output "estimate_line_items" {
-  value = var.estimate
+  value = local.effective_estimate
 }
 
 output "within_budget" {

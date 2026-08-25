@@ -2,16 +2,20 @@
 # Hetzner has no native budget API — operators set project notifications.
 
 locals {
+  effective_estimate = merge(var.estimate, {
+    general_nodes_eur = var.estimate.general_nodes_eur * (var.general_node_count / 2)
+  })
+
   estimate_total = (
-    var.estimate.control_plane_eur +
-    var.estimate.general_nodes_eur +
-    var.estimate.registry_eur +
-    var.estimate.postgres_eur +
-    var.estimate.volumes_eur +
-    var.estimate.object_storage_eur +
-    var.estimate.load_balancer_eur +
-    var.estimate.dns_eur +
-    var.estimate.contingency_eur
+    local.effective_estimate.control_plane_eur +
+    local.effective_estimate.general_nodes_eur +
+    local.effective_estimate.registry_eur +
+    local.effective_estimate.postgres_eur +
+    local.effective_estimate.volumes_eur +
+    local.effective_estimate.object_storage_eur +
+    local.effective_estimate.load_balancer_eur +
+    local.effective_estimate.dns_eur +
+    local.effective_estimate.contingency_eur
   )
 
   budget = {
@@ -21,6 +25,7 @@ locals {
     region               = var.region
     environment          = var.environment
     provider             = "hetzner"
+    general_node_count   = var.general_node_count
     enforcement          = "manual-alerts-plus-node-caps"
     estimate_total_eur   = local.estimate_total
     within_budget        = local.estimate_total <= var.monthly_budget_eur
@@ -43,7 +48,7 @@ resource "local_file" "budget_policy" {
     budget              = local.budget
     required_labels     = var.required_labels
     resource_limits     = var.resource_limits
-    estimate_line_items = var.estimate
+    estimate_line_items = local.effective_estimate
     checklist = [
       "Set Hetzner project spending notifications at thresholds",
       "Enforce max_worker_nodes in node-pools module",

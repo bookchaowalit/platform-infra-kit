@@ -99,8 +99,13 @@ else
 fi
 
 # 9-10 docs
-for f in STAGING-DATA-BACKUP-RESTORE.md PRE-APPLY-AUDIT.md STAGING-INFRA-RUNBOOK.md; do
-  if [[ -f "$REPO/operations/$f" ]]; then
+declare -A REQUIRED_DOCS=(
+  [STAGING-DATA-BACKUP-RESTORE.md]="$REPO/operations/runbooks/STAGING-DATA-BACKUP-RESTORE.md"
+  [PRE-APPLY-AUDIT.md]="$REPO/operations/evidence/PRE-APPLY-AUDIT.md"
+  [STAGING-INFRA-RUNBOOK.md]="$REPO/operations/platform/STAGING-INFRA-RUNBOOK.md"
+)
+for f in "${!REQUIRED_DOCS[@]}"; do
+  if [[ -f "${REQUIRED_DOCS[$f]}" ]]; then
     ok "doc present: $f"
   else
     fail "missing doc: $f"
