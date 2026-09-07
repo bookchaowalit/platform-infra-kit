@@ -36,11 +36,12 @@ log "[1] DNS resolution"
 declare -A EXPECT_IP=(
   [ai-doc-assistant.homelab.local]="$HOMELAB_NODE_IP"
   [booknbook.homelab.local]="$HOMELAB_NODE_IP"
+  [netbox.homelab.local]="$HOMELAB_NODE_IP"
   [platform-smoke.local]="$HOMELAB_NODE_IP"
   [registry.homelab.local]="$REGISTRY_IP"
 )
 
-for host in ai-doc-assistant.homelab.local booknbook.homelab.local platform-smoke.local registry.homelab.local; do
+for host in ai-doc-assistant.homelab.local booknbook.homelab.local netbox.homelab.local platform-smoke.local registry.homelab.local; do
   resolved=""
   if command -v getent >/dev/null 2>&1; then
     resolved=$(getent ahostsv4 "$host" 2>/dev/null | awk '{print $1; exit}')
@@ -123,6 +124,7 @@ booknbook.homelab.local /healthz 200
 booknbook.homelab.local /readyz 200
 booknbook.homelab.local /th 200
 platform-smoke.local / 200
+netbox.homelab.local /login/ 200
 PROBES
 
 # --- Registry TCP only (no web UI claim) ---

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: netbox
+    solo.empire/environment: homelab
+    solo.empire/data-class: infrastructure-inventory

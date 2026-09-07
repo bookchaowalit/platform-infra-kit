@@ -18,10 +18,10 @@ isolated VM or server with its own DNS, firewall, backups, and rollback plan.
 The repository now provides a read-only preflight:
 
 ```bash
-npm --prefix infra run selfhosted:readiness
-npm --prefix infra run selfhosted:readiness:coolify
-npm --prefix infra run selfhosted:readiness:caprover
-npm --prefix infra run selfhosted:readiness:dokku
+task selfhosted:readiness
+task selfhosted:readiness:coolify
+task selfhosted:readiness:caprover
+task selfhosted:readiness:dokku
 ```
 
 The preflight never installs packages, changes firewall rules, modifies DNS,

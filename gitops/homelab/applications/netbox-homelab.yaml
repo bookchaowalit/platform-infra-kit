@@ -1,0 +1,37 @@
+# Argo CD Application for the private Homelab NetBox inventory.
+# The workload manifests are durable GitOps state. The netbox-runtime Secret
+# is created out-of-band by bootstrap-netbox.sh and is never stored in Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: netbox-homelab
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: netbox
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/component: inventory
+    solo.empire/environment: homelab
+    solo.empire/team: platform
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: solo-empire-apps
+  source:
+    repoURL: git@github.com:bookchaowalit/solo-empire.git
+    targetRevision: main
+    path: infra/platform/gitops/homelab/netbox
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps-netbox-homelab
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 1m

@@ -2,7 +2,7 @@
 title: "Solo Empire Kubernetes Application Platform"
 tags: [documentation, infra]
 created: 2026-08-03
-updated: 2026-08-23
+updated: 2026-09-07
 description: "Documentation for Solo Empire Kubernetes Application Platform."
 ---
 
@@ -59,33 +59,49 @@ export PATH="$HOME/.local/bin:$PATH"
 
 This installs platform controllers only. It does not deploy business apps.
 
-## Multi-PaaS Control Plane (read-only)
+## Multi-PaaS Control Plane
 
 The repository also exposes a small provider-neutral catalog and health surface
 for Vercel, Render, Railway, Fly.io, and Heroku. It is intentionally limited to
 credential state, bounded API health checks, provider metadata, and dashboard
-links. Deployment, restart, rollback, environment-variable mutation, and other
-write actions are disabled.
+links. The read surfaces remain independent of mutations. The local owner can
+now register, review, approve, submit, and verify Render web-service actions,
+including the bounded `autoDeploy` service setting, from `/cloud`; other
+provider write adapters and environment-variable mutation remain unavailable.
+See [Governed PaaS execution](./PAAS-EXECUTION.md).
 
 ```bash
 # Show the provider catalog without calling external APIs
-npm --prefix infra run paas:catalog
+task paas:catalog
 
 # Check whether provider credentials are available locally
-npm --prefix infra run paas:health
+task paas:health
 
 # Make bounded, read-only API checks (requires provider credentials)
-npm --prefix infra run paas:health:live
+task paas:health:live
 
 # Inventory project/service/app metadata (offline by default)
-npm --prefix infra run paas:inventory
-npm --prefix infra run paas:inventory:live
+task paas:inventory
+task paas:inventory:live
 ```
 
 The local task dashboard exposes the same surface at `/api/paas`; it defaults to
 offline credential inspection and accepts `?live=true` for an explicit live
 check. Set provider credentials through the normal runtime secret resolver; the
 variable names are documented in [`infra/.env.example`](../.env.example).
+
+Render target discovery is a separate bounded read-only surface. Use the local
+CLI session when available, or the server-side API key resolver, and pass only
+the selected IDs into a later governed request:
+
+```bash
+task paas:render:discover -- --live --source cli --json
+task paas:render:discover -- --live --source cli --service-id srv-example --environment-id evm-example --json
+```
+
+The Cloud/PaaS page exposes the same discovery flow and lets the owner select a
+service or recent deploy to populate the action form. Discovery does not make
+deploy, restart, rollback, or configuration changes.
 
 The catalog is [`paas-registry.json`](./paas-registry.json), and the health
 adapter is [`scripts/platform/paas_health.py`](../scripts/platform/paas_health.py).
@@ -97,6 +113,87 @@ variables, logs, tokens, raw provider payloads, and mutation operations remain
 out of scope. The dashboard exposes it at `/api/paas/inventory`, with live
 requests requiring the explicit `?live=true` query.
 
+### Cloud account + usage snapshot (read-only)
+
+The decision board can combine the inventory with non-secret account metadata
+and the local finance ledger without returning account IDs, endpoints,
+credential references, or raw provider payloads:
+
+```bash
+# Local snapshot: no provider API or secret store is read
+task cloud:usage
+
+# Explicit bounded provider list/read calls through the existing adapters
+task cloud:usage:live
+
+# Cloudflare R2 account-level storage/object signal only
+task cloud:r2:usage
+task cloud:r2:usage:live
+```
+
+The same contract is available at `/api/cloud/usage`; it defaults to local
+aggregation and requires `?live=true` for provider calls. `resources` is an
+inventory signal, not provider billing telemetry. Cost values are known linked
+commitments/payments from `finance_subscriptions`, with no currency conversion.
+The first provider-specific adapter is Cloudflare R2. It calls only the
+account-level `GET /accounts/{account_id}/r2/metrics` endpoint in explicit live
+mode and returns aggregate published/uploaded metrics by storage class. The
+provider documents that account-level metrics may lag the latest data. When a
+healthy snapshot is available, the adapter adds a clearly labelled
+storage-only estimate using the public [R2 pricing page](https://developers.cloudflare.com/r2/pricing/):
+current published payload is treated as a constant GB-month, Standard gets the
+documented 10 GB-month free tier, and Infrequent Access is priced separately.
+The estimate excludes operation counts, Infrequent Access retrieval, and
+30-day daily-average/rounding effects, so it is not an invoice and does not
+enable provider billing reconciliation. Cloudflare's billing-usage endpoints
+remain out of scope while they are marked alpha/restricted in the official API
+reference.
+
+The aggregate collector is
+[`scripts/platform/cloud_usage.py`](../scripts/platform/cloud_usage.py), and
+the provider adapter is
+[`scripts/platform/cloudflare_r2_usage.py`](../scripts/platform/cloudflare_r2_usage.py).
+Both are read-only and never write SQLite, the data lake, or provider
+resources. Raw provider payloads, account IDs, bucket names, and credential
+values are discarded at the adapter boundary.
+
+### Vercel billing charges (read-only)
+
+The next provider-specific billing adapter is
+[`scripts/platform/vercel_billing.py`](../scripts/platform/vercel_billing.py).
+In explicit live mode it calls only Vercel's official
+`GET /v1/billing/charges` endpoint, requests a bounded window, consumes the
+FOCUS v1.3 JSONL stream in memory, and returns only charge count, totals by
+currency, and a small service/category breakdown. Raw FOCUS rows, resource
+identifiers, tags, account identifiers, and tokens are discarded. It never
+calls a mutating Vercel endpoint and it does not archive billing rows to the
+data lake yet.
+
+```bash
+# Offline contract (does not resolve credentials)
+task cloud:vercel:billing
+
+# Live read-only billing window (requires VERCEL_TOKEN and billing access)
+task cloud:vercel:billing:live
+```
+
+The official API exposes billing data for teams with the appropriate billing
+scope; Vercel documents that this scope is available for Pro and Enterprise
+teams. The dashboard labels this as provider billing charges, not as the local
+finance ledger. If the token or billing permission is absent, the adapter
+returns a safe `not_configured`/`error` state and the dashboard keeps the
+provider cost disconnected. The response also exposes only the required secret
+name, whether a team scope was configured, and a machine-readable next action;
+it never returns a secret value, team ID, or provider payload. A
+`secret_provider_unreachable` result means the runtime secret session must be
+restored before retrying; it is not evidence that the Vercel token is invalid.
+
+Render and Fly.io remain inventory/metrics/pricing references in this phase,
+not billing-charge adapters. Their official documentation describes provider
+dashboards, invoices, or usage/pricing surfaces, but this repository has not
+found a bounded public charges endpoint with the same read-only contract. Keep
+their costs in the local ledger until an official API can be verified.
+
 ### Local self-hosted control plane (read-only)
 
 The existing local self-hosted runtime is now visible from the same dashboard
@@ -107,11 +204,11 @@ or cluster-management commands.
 
 ```bash
 # Inspect Docker Compose lab + local K3s/k3d in one JSON report
-npm --prefix infra run selfhosted:health
+task selfhosted:health
 
 # Inspect one boundary only
-npm --prefix infra run selfhosted:health:docker
-npm --prefix infra run selfhosted:health:k8s
+task selfhosted:health:docker
+task selfhosted:health:k8s
 ```
 
 The dashboard exposes the same read-only result at `/api/self-hosted`. This is
@@ -128,10 +225,10 @@ resource availability, listening-port conflicts, existing workloads, Docker
 and K3s status, and backup evidence without installing or changing anything:
 
 ```bash
-npm --prefix infra run selfhosted:readiness
-npm --prefix infra run selfhosted:readiness:coolify
-npm --prefix infra run selfhosted:readiness:caprover
-npm --prefix infra run selfhosted:readiness:dokku
+task selfhosted:readiness
+task selfhosted:readiness:coolify
+task selfhosted:readiness:caprover
+task selfhosted:readiness:dokku
 ```
 
 The current host is intentionally blocked for an in-place PaaS install because
@@ -145,7 +242,7 @@ The dashboard exposes the report at
 
 The implementation is [`scripts/platform/self_hosted_readiness.py`](../scripts/platform/self_hosted_readiness.py).
 
-### Render discovery and staging rollback preflight
+### Render discovery and action preflight
 
 Render now has a separate read-only adapter for selecting a service and a
 rollback target. Discovery reads bounded service metadata and, when a service
@@ -154,70 +251,94 @@ is selected, recent deploy metadata. It never calls `POST /rollback`, `POST
 
 ```bash
 # Discover Render services without calling the provider
-npm --prefix infra run paas:render:discover -- --json
+task paas:render:discover -- --json
 
 # Discover services and recent deploys through Render GET endpoints
-npm --prefix infra run paas:render:discover -- \
+task paas:render:discover -- \
   --live \
   --environment-id env-staging \
   --service-id srv-staging \
   --json
 
 # If the local Render CLI is already logged in, use its read-only session
-npm --prefix infra run paas:render:discover -- \
+task paas:render:discover -- \
   --live \
   --source cli \
   --service-id srv-staging \
   --json
 
-# Check a rollback target; this is staging-only and still does not roll back
-npm --prefix infra run paas:render:preflight -- \
+# Check a staging or production rollback target; this still does not roll back
+task paas:render:preflight -- \
   --live \
   --source cli \
-  --service-id srv-staging \
-  --environment-id env-staging \
+  --service-id srv-example \
+  --environment-id evm-example \
+  --environment production \
   --target-deploy-id dep-previous \
-  --health-url https://staging.example.com/health \
+  --health-url https://service.onrender.com/healthz \
   --json
+
+# Check a pinned deploy before registering the approval request
+python3 infra/scripts/platform/render_preflight.py action-preflight \
+  --live --source cli --action deploy \
+  --service-id srv-example --environment-id evm-example \
+  --environment production \
+  --target-revision 0123456789abcdef0123456789abcdef01234567 \
+  --health-path /healthz --json
 ```
 
-The preflight fails closed unless the environment returned by Render is named
-`staging`, the service is bound to that exact environment, `autoDeploy` is
-disabled, the target deploy is successful (`live` or a completed previous
-deploy such as `deactivated`), and the health URL returns HTTP 2xx. A passing
-preflight only produces evidence for a later proposal; `execution_allowed`
-remains `false` and `write_attempted` remains `false`.
+The action preflight fails closed unless the environment returned by Render is
+named the requested `staging` or `production`, the service is bound to that
+exact environment, and the requested action's recovery checks pass. Deploy,
+restart, and rollback require `autoDeploy` to be disabled, one current live
+deploy, no deploy in progress, and a provider-owned health URL returning HTTP
+2xx. A `set-auto-deploy` preflight requires a known current value that differs
+from the requested value. A passing preflight only produces evidence for a
+later proposal; `execution_allowed` remains `false` and `write_attempted`
+remains `false`.
 
 The local task dashboard also exposes Render discovery at
 `/api/paas/render/discovery`; use `?live=true&source=cli` when the local Render
-CLI session is authenticated. The rollback preflight stays CLI-only so an
-operator-supplied health URL cannot turn the dashboard into an arbitrary
-network-probe surface. The `cli` source captures only sanitized service,
+CLI session is authenticated. Action preflight accepts only a provider-owned
+Render health origin, so an operator-supplied path cannot turn the dashboard
+into an arbitrary network-probe surface. The dashboard exposes the bounded
+`/api/paas/render/action-preflight` GET route for deploy, restart, rollback, and
+set-auto-deploy; the legacy `/api/paas/render/preflight` route remains for
+rollback compatibility. Both derive the health origin from the provider-owned
+Render URL and remain read-only. The `cli` source captures only sanitized service,
 environment, deploy status, commit ID, and timestamps; owner, repository,
 SSH, and secret-shaped fields are never emitted.
 
 The implementation is [`scripts/platform/render_preflight.py`](../scripts/platform/render_preflight.py).
+Selected services also return a sanitized `healthCheckPath`; the dashboard
+uses it when present and falls back to `/healthz` when the provider does not
+return one. The same read-only adapter now checks deploy, restart, rollback,
+and set-auto-deploy prerequisites before an approval request is created.
 
-### Governed action proposal (still no provider writes)
+### Governed action proposal and Render execution
 
 The action policy describes `deploy`, `restart`, and `rollback` per provider,
+plus the bounded Render `set-auto-deploy` action,
 including the stable resource type, target fields, provider API surface, and
 whether the action is `supported`, `manual`, or `unsupported`. The policy is
-proposal-only: every action requires a matching approved `paas` decision record,
-and the global execution gate remains disabled.
+governed: every action requires a matching approved `paas` decision record.
+Only `render-v1` is enabled. Merely inspecting or registering a proposal cannot
+call a provider write endpoint; submission is a separate confirmed command.
 
 ```bash
 # Inspect the action/resource matrix
-npm --prefix infra run paas:actions
+task paas:actions
 
 # Produce a blocked proposal; this does not contact a provider or write SQLite
-npm --prefix infra run paas:action:propose -- \
+task paas:action:propose -- \
   --provider render \
   --action rollback \
   --resource-type service \
   --resource-id srv-example \
   --environment production \
-  --rollback-target deploy-example-previous \
+  --environment-id evm-example \
+  --health-path /healthz \
+  --rollback-target dep-example-previous \
   --reason "Recover from a verified production incident" \
   --json
 ```
@@ -235,8 +356,12 @@ python3 infra/scripts/cli/decision-cli.py approve <decision-id> \
 ```
 
 The proposal fingerprint binds an approval to the exact provider, action,
-resource, environment, and target. Approval alone is insufficient while
-`execution_enabled` is `false`; no automatic rollback is performed.
+resource, environment name/ID, target, reason, and health path. Live preflight
+and an atomic, non-replayable claim are required before submission. Setting
+`execution_enabled` to `false` disables new execution; verification stays
+available. No automatic rollback is performed. The command protocol, local
+browser boundary, uncertainty handling, and known gaps are documented in
+[PAAS-EXECUTION.md](./PAAS-EXECUTION.md).
 
 `helm/solo-app/pilot/` is disposable output. The local deploy script copies
 the canonical values from `gitops/applications/values/dev/`, applies only the

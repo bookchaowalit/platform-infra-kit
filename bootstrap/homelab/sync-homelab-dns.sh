@@ -41,6 +41,7 @@ ${BEGIN_MARKER}
 # Private LAN only. Do NOT mix with Docker Compose Lab (127.0.0.1 *.local).
 ${HOMELAB_NODE_IP} ai-doc-assistant.homelab.local
 ${HOMELAB_NODE_IP} booknbook.homelab.local
+${HOMELAB_NODE_IP} netbox.homelab.local
 ${HOMELAB_NODE_IP} platform-smoke.local
 ${REGISTRY_IP} registry.homelab.local
 ${END_MARKER}
@@ -106,5 +107,5 @@ else
 fi
 
 echo "OK: updated Homelab block in ${HOSTS_FILE}"
-echo "Verify: getent hosts ai-doc-assistant.homelab.local registry.homelab.local"
-getent hosts ai-doc-assistant.homelab.local booknbook.homelab.local platform-smoke.local registry.homelab.local 2>/dev/null || true
+echo "Verify: getent hosts ai-doc-assistant.homelab.local netbox.homelab.local registry.homelab.local"
+getent hosts ai-doc-assistant.homelab.local booknbook.homelab.local netbox.homelab.local platform-smoke.local registry.homelab.local 2>/dev/null || true

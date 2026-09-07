@@ -1,0 +1,190 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-web-egress
+  namespace: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/name: netbox
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/environment: homelab
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: netbox
+      app.kubernetes.io/component: web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-worker
+              app.kubernetes.io/component: worker
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-redis-cache
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox
+              app.kubernetes.io/component: web
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-worker-egress
+  namespace: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/name: netbox-worker
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/environment: homelab
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: netbox-worker
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox-redis-cache
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox
+              app.kubernetes.io/component: web
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-data-ingress
+  namespace: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/name: netbox-data
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/environment: homelab
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - netbox-postgres
+          - netbox-redis
+          - netbox-redis-cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps-netbox-homelab
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - web
+                  - worker
+                  - bootstrap
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379

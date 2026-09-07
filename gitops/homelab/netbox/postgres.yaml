@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbox-postgres
+  namespace: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/name: netbox-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/environment: homelab
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: netbox-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: netbox-postgres
+  namespace: apps-netbox-homelab
+  labels:
+    app.kubernetes.io/name: netbox-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: solo-empire
+    solo.empire/environment: homelab
+spec:
+  serviceName: netbox-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbox-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netbox-postgres
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: solo-empire
+        solo.empire/environment: homelab
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: docker.io/postgres:17-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              value: netbox
+            - name: POSTGRES_USER
+              value: netbox
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: netbox-runtime
+                  key: DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          # The official Postgres entrypoint starts as root to initialize/chown
+          # the mounted PGDATA directory, then drops to the postgres user.
+          # Keep the pod seccomp profile above, but do not remove the entrypoint
+          # capabilities required for first-run PVC initialization.
+          securityContext:
+            readOnlyRootFilesystem: false
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U netbox -d netbox
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U netbox -d netbox
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+        labels:
+          app.kubernetes.io/name: netbox-postgres
+          app.kubernetes.io/component: database
+          app.kubernetes.io/part-of: solo-empire
+          solo.empire/environment: homelab
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 4Gi

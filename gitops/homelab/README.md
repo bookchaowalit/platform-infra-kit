@@ -2,7 +2,7 @@
 title: "Homelab GitOps"
 tags: [documentation, infra]
 created: 2026-08-02
-updated: 2026-08-08
+updated: 2026-08-30
 description: "Documentation for Homelab GitOps."
 ---
 
@@ -15,7 +15,9 @@ Private-LAN K3s GitOps sources for non-production portfolio workloads.
 | Path | Purpose |
 |------|---------|
 | `platform-smoke/` | Synthetic HTTP smoke app (Namespace, ConfigMap, Deployment, Service, Ingress) |
+| `netbox/` | Private NetBox inventory with PostgreSQL, Valkey, PVCs, NetworkPolicies, and Ingress |
 | `applications/platform-smoke-homelab.yaml` | Argo CD Application (apply once; then Argo owns the workload) |
+| `applications/netbox-homelab.yaml` | Argo CD Application for the Homelab inventory service |
 | `applications/ai-doc-assistant-homelab.yaml` | GitHub-backed AI document app Application |
 | `applications/booknbook-homelab.yaml` | GitHub-backed Next.js portfolio app Application |
 | `argocd/solo-empire-apps-project.yaml` | AppProject destinations including `platform-smoke` |
@@ -23,8 +25,9 @@ Private-LAN K3s GitOps sources for non-production portfolio workloads.
 ## Boundary
 
 - Business applications are homelab portfolio deployments only; no customer data
-- No secrets, databases, PVs, or customer data
-- Private ingress hosts only: `platform-smoke.local`, `ai-doc-assistant.homelab.local`, `booknbook.homelab.local`
+- NetBox has private inventory data and PVC-backed PostgreSQL/Valkey; it is non-production and contains no customer data
+- No secrets are stored in Git; `netbox-runtime` is created out-of-band by `bootstrap-netbox.sh`
+- Private ingress hosts only: `platform-smoke.local`, `ai-doc-assistant.homelab.local`, `booknbook.homelab.local`, `netbox.homelab.local`
 - Staging and production ApplicationSets are not enabled here
 
 ## Repository access (durable)

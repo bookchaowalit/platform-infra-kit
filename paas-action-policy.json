@@ -1,10 +1,10 @@
 {
   "schema_version": "solo-empire.paas-action-policy.v1",
   "version": 1,
-  "mode": "proposal-only",
-  "execution_enabled": false,
-  "mutating_requests_enabled": false,
-  "execution_disabled_reason": "No provider write adapter may run until the action is explicitly approved, bound to a stable resource, and enabled by a reviewed policy change.",
+  "mode": "governed-execution",
+  "execution_enabled": true,
+  "mutating_requests_enabled": true,
+  "execution_disabled_reason": "Only the render-v1 adapter is enabled, for approved web-service actions after live preflight. Other adapters remain disabled.",
   "approval": {
     "source_of_truth": "infra/database/solo-empire.db:decision_records",
     "domain": "paas",
@@ -23,10 +23,13 @@
       "resource_type",
       "resource_id",
       "environment",
+      "environment_id",
       "reason"
     ],
+    "health_path_required_for": ["deploy", "restart", "rollback"],
     "deploy_requires": ["target_revision"],
     "rollback_requires": ["rollback_target"],
+    "set_auto_deploy_requires": ["auto_deploy"],
     "production_requires_approval_id": true,
     "resource_id_rule": "Provider-owned stable ID only; never a URL, credential, token, or raw payload.",
     "credential_rule": "Credentials are resolved at execution time only and are never part of a proposal."
@@ -36,13 +39,15 @@
       "provider health is healthy",
       "resource exists and matches the provider",
       "target revision or rollback target exists",
-      "rollback target and verification endpoint are recorded"
+      "rollback target and verification endpoint are recorded",
+      "set-auto-deploy records the requested provider configuration state"
     ],
     "post_action": [
       "provider action reaches a terminal success state",
       "resource health is healthy",
       "bounded endpoint smoke check passes",
-      "outcome and provider action ID are recorded"
+      "outcome and provider action identity are recorded",
+      "configuration actions verify the provider state directly"
     ],
     "automatic_rollback": false,
     "rollback_rule": "Rollback is a separate explicit proposal and never an automatic side effect.",
@@ -85,24 +90,31 @@
       "actions": {
         "deploy": {
           "support": "supported",
-          "adapter": "disabled",
+          "adapter": "render-v1",
           "resource_types": ["service"],
           "required_fields": ["target_revision"],
           "surface": "POST /v1/services/{serviceId}/deploys"
         },
         "restart": {
           "support": "supported",
-          "adapter": "disabled",
+          "adapter": "render-v1",
           "resource_types": ["service"],
           "required_fields": [],
           "surface": "POST /v1/services/{serviceId}/restart"
         },
         "rollback": {
           "support": "supported",
-          "adapter": "disabled",
+          "adapter": "render-v1",
           "resource_types": ["service", "deploy"],
           "required_fields": ["rollback_target"],
-          "surface": "POST /v1/services/{serviceId}/rollbackTrigger"
+          "surface": "POST /v1/services/{serviceId}/rollback"
+        },
+        "set-auto-deploy": {
+          "support": "supported",
+          "adapter": "render-v1",
+          "resource_types": ["service"],
+          "required_fields": ["auto_deploy"],
+          "surface": "PATCH /v1/services/{serviceId} with autoDeploy yes/no"
         }
       },
       "docs": "https://api-docs.render.com/reference/introduction"
