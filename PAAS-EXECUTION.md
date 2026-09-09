@@ -1,7 +1,7 @@
 ---
 title: Governed PaaS Execution
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-08
 description: Local owner workflow for approved Render actions, verification, and non-replayable submission.
 ---
 
@@ -22,8 +22,10 @@ approves it, explicitly submits it, and checks the result from the same page.
 | Render rollback | Successful previous deploy belonging to the same service |
 | Render restart | Submit restart; no inferred success when Render returns no deploy ID |
 | Render set autoDeploy | Explicit `yes`/`no` service configuration through the same approval and verification flow |
-| Approval and history | Local registration, explicit review/approval, exact request fingerprint, durable submission claim |
+| Approval and history | Local registration, explicit review/approval, exact request fingerprint, one-hour approval freshness window, durable submission claim |
+| Resource serialization | One in-flight mutation per provider/resource/environment scope; ambiguous claims hold the scope until reconciliation |
 | Verification | Named deploy must be live; deploy revision must match; provider-owned HTTPS health endpoint must pass |
+| Reconciliation | Read-only provider evidence can resolve an ambiguous deploy/rollback; Render restart remains explicitly unresolved without an action identity |
 | Vercel, Railway, Fly.io, Heroku | Existing read adapters; write adapters remain disabled |
 | Billing | Existing Vercel charges and R2 storage signals; other providers remain explicit gaps |
 | Environment variables, new resources, infrastructure provisioning | No mutation adapter in this release |
@@ -31,6 +33,28 @@ approves it, explicitly submits it, and checks the result from the same page.
 This is an implemented Render execution lane, not a claim that the entire
 multi-cloud management project or production acceptance is complete. Live
 acceptance requires an owner-selected service/environment and exact action.
+
+The extraction pilot now has an independently runnable pair:
+`apps/cloud-web` (default port `3200`) and `services/cloud-api` (default port
+`3440`), connected by the `cloud.v1` contract. The new web surface reads the
+bounded usage, inventory, action policy, and Render preflight routes. The
+existing dashboard at `infra/dashboard` and its port `3456` API remain the
+compatibility facade for the full decision board while command/UI parity is
+reviewed; no data-owner or approval-store cutover is implied.
+
+Approval freshness is enforced from `decision_records.decided_at` (with the
+legacy `updated_at` fallback only when no decision timestamp exists). The
+policy allows one hour (`3600` seconds); expired, future-dated, or
+timestamp-less approvals are blocked and require a fresh owner review. The
+freshness check runs before preflight and again inside the atomic execution
+claim, so a request that expires while waiting for preflight cannot acquire a
+provider mutation claim.
+
+The live read-only inventory is deliberately bounded to 20 resources per
+provider. Each provider reports `partial`, `has_more`, and `total_known`; the
+dashboard labels a provider as “แสดงบางส่วน/มีหน้าถัดไป” when the provider
+page is capped or supplies a continuation cursor. `resource_count` is the
+number returned to the dashboard, not an unverified remote total.
 
 ## Owner workflow
 
@@ -53,10 +77,17 @@ acceptance requires an owner-selected service/environment and exact action.
    configuration action uses the same live preflight, atomic claim, provider
    PATCH, and post-write verification; it is never an implicit preflight side
    effect.
-5. Create the request. This writes only local decision metadata.
-6. Review the persisted request and select the approval confirmation.
+5. Create the request. This writes only local decision metadata. Leave
+   **Operation ID** empty when retrying the same registration; enter a new
+   bounded value (for example `round-2`) only when intentionally starting a
+   new round of an otherwise identical action.
+6. Review the persisted request and select the approval confirmation. Execute
+   within the one-hour approval freshness window; otherwise create a fresh
+   request and review it again.
 7. Select the separate execution confirmation and submit.
 8. Check provider results. A successful API submission is not deployment success.
+   For `submission_unknown` or `verification_required`, use reconciliation to
+   inspect provider evidence. It never resubmits the mutation.
 
 The API must be directly reachable on loopback port `3456`. Browser commands
 use `POST /api/paas/commands` directly, bypassing the Next.js read proxy.
@@ -95,6 +126,7 @@ Commands after registration accept `decision_id`:
 | `approve` | `proposal_id`, `confirm: true` | Approve the exact reviewed fingerprint locally |
 | `execute` | `confirm: true` | Live preflight, atomic claim, one provider POST |
 | `verify` | `confirm: true` | Provider reads and health check; append terminal evidence locally |
+| `reconcile` | `confirm: true` | Provider reads to resolve an ambiguous claim; never sends a second mutation |
 
 The existing decision CLI can also approve a registered request. Legacy
 proposals lacking structured request metadata must be registered afresh with
@@ -117,9 +149,11 @@ event, never from a browser-supplied replacement at execution time.
   custom hosts, queries, credentials, redirects, or proxies.
 - Health probes allow up to 20 seconds for a Render cold start; a timeout is
   still a blocker and never triggers a retry or provider write.
-- Recheck approval inside `BEGIN IMMEDIATE`, then persist the claim before POST.
-- A second executor, requeued decision, or network timeout cannot replay the
-  claim. Submission uncertainty remains blocked for operator reconciliation.
+- Recheck approval status and freshness inside `BEGIN IMMEDIATE`, then persist
+  the claim before POST.
+- A second executor, a different decision for the same resource, a requeued
+  decision, or a network timeout cannot replay the claim. Submission
+  uncertainty holds the resource scope until operator reconciliation.
 - Never send provider response bodies, tokens, or unbounded errors to the UI.
 
 `pending` means a named deployment or configuration update still needs

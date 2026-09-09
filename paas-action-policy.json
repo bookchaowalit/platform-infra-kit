@@ -13,6 +13,8 @@
     "required_status": "approved",
     "required_approval_status": "approved",
     "required_action_status": "queued",
+    "max_age_seconds": 3600,
+    "expiry_rule": "Approval is valid for one hour from decided_at; an expired approval requires fresh owner review and cannot execute.",
     "approval_binding": "paas-proposal fingerprint must match decision_records.source_ref",
     "no_bypass": true
   },
@@ -26,6 +28,8 @@
       "environment_id",
       "reason"
     ],
+    "optional": ["operation_id"],
+    "operation_id_rule": "Bounded non-secret identifier; a new value intentionally starts a new operation round while retries reuse the existing request.",
     "health_path_required_for": ["deploy", "restart", "rollback"],
     "deploy_requires": ["target_revision"],
     "rollback_requires": ["rollback_target"],
