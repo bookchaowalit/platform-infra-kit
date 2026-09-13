@@ -28,35 +28,40 @@
       "unit": "assets",
       "gpu_trigger_units": 10,
       "worker": "media-image",
-      "api_fallback": "api",
+      "api_fallback": "managed_media_api",
+      "fallback_ready": false,
       "privacy_classes": ["public", "internal"]
     },
     "video": {
       "unit": "minutes",
       "gpu_trigger_units": 30,
       "worker": "media-video",
-      "api_fallback": "api",
+      "api_fallback": "managed_media_api",
+      "fallback_ready": false,
       "privacy_classes": ["public", "internal"]
     },
     "ocr": {
       "unit": "pages",
       "gpu_trigger_units": 500,
       "worker": "doc-ocr",
-      "api_fallback": "api",
+      "api_fallback": "api_or_cpu",
+      "fallback_ready": true,
       "privacy_classes": ["public", "internal"]
     },
     "stt": {
       "unit": "audio_hours",
       "gpu_trigger_units": 10,
       "worker": "audio-stt",
-      "api_fallback": "api",
+      "api_fallback": "api_or_cpu",
+      "fallback_ready": true,
       "privacy_classes": ["public", "internal"]
     },
     "embeddings": {
       "unit": "documents",
       "gpu_trigger_units": 1000000,
       "worker": "vector-embeddings",
-      "api_fallback": "api",
+      "api_fallback": "api_or_cpu",
+      "fallback_ready": true,
       "privacy_classes": ["public", "internal"]
     },
     "batch_text": {
@@ -64,6 +69,7 @@
       "gpu_trigger_units": 1000,
       "worker": "qwen-text",
       "api_fallback": "api",
+      "fallback_ready": true,
       "privacy_classes": ["public", "internal"]
     }
   },
