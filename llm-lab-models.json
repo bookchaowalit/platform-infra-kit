@@ -1,0 +1,55 @@
+{
+  "schema_version": "solo-empire.llm-lab-models.v1",
+  "updated": "2026-09-12",
+  "default_profile": "compact",
+  "profiles": {
+    "compact": {
+      "role": "cheap_gpu_worker_llm",
+      "service_lane": "runpod",
+      "workloads": ["batch", "reasoning"],
+      "activation": "on_demand",
+      "model_id": "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+      "served_model_name": "qwen3-30b-a3b-gptq-int4",
+      "backend": "vllm",
+      "quantization": "GPTQ-Int4",
+      "deployment_mode": "single_gpu",
+      "gateway_profiles": ["fast", "balanced"],
+      "hardware_guidance": "Official GPTQ-Int4 checkpoint is the A6000-sized default; still verify VRAM headroom and context length before launch.",
+      "context_tokens": 32768,
+      "cost_class": "low"
+    },
+    "daily": {
+      "role": "quality_worker_experiment",
+      "service_lane": "runpod",
+      "workloads": ["batch", "reasoning"],
+      "activation": "on_demand",
+      "model_id": "Qwen/Qwen3-Coder-Next",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next",
+      "served_model_name": "qwen3-coder-next",
+      "backend": "vllm",
+      "quantization": "operator-selected",
+      "deployment_mode": "multi_gpu_or_offload",
+      "gateway_profiles": ["fast", "balanced", "quality"],
+      "hardware_guidance": "The total weight size, quantization, tensor parallelism, and context length must be measured together.",
+      "context_tokens": 65536,
+      "cost_class": "medium"
+    },
+    "frontier": {
+      "role": "frontier_experiment",
+      "service_lane": "runpod",
+      "workloads": ["reasoning", "batch"],
+      "activation": "burst_only",
+      "model_id": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+      "served_model_name": "deepseek-v4.1-flash",
+      "backend": "sglang_or_vllm",
+      "quantization": "checkpoint-dependent",
+      "deployment_mode": "rented_multi_gpu_cluster",
+      "gateway_profiles": ["quality"],
+      "hardware_guidance": "Treat this as a burst experiment; derive GPU count, VRAM, and hourly price from the exact checkpoint and provider before starting.",
+      "context_tokens": 131072,
+      "cost_class": "high"
+    }
+  }
+}

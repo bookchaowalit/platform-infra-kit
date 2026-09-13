@@ -1,0 +1,126 @@
+{
+  "schema_version": "solo-empire.gpu-worker-catalog.v1",
+  "updated": "2026-09-13",
+  "default_api_lane": "api",
+  "runpod_lane": "runpod",
+  "thresholds_status": "planning_defaults_require_job_benchmark",
+  "runpod_enabled_env": "GPU_WORKER_RUNPOD_ENABLED",
+  "monthly_budget_env": "LLM_LAB_MONTHLY_BUDGET_USD",
+  "queue": {
+    "state_path": "data/runtime/gpu-workers/jobs.json",
+    "raw_payloads": "forbidden",
+    "idempotency": "job_id_and_idempotency_key",
+    "concurrency": "one_gpu_job_at_a_time_per_pod",
+    "max_attempts": 2
+  },
+  "api_workloads": [
+    "chat",
+    "coding",
+    "reasoning",
+    "planning",
+    "orchestration",
+    "small_ocr",
+    "small_stt",
+    "small_embeddings"
+  ],
+  "workloads": {
+    "image": {
+      "unit": "assets",
+      "gpu_trigger_units": 10,
+      "worker": "media-image",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    },
+    "video": {
+      "unit": "minutes",
+      "gpu_trigger_units": 30,
+      "worker": "media-video",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    },
+    "ocr": {
+      "unit": "pages",
+      "gpu_trigger_units": 500,
+      "worker": "doc-ocr",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    },
+    "stt": {
+      "unit": "audio_hours",
+      "gpu_trigger_units": 10,
+      "worker": "audio-stt",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    },
+    "embeddings": {
+      "unit": "documents",
+      "gpu_trigger_units": 1000000,
+      "worker": "vector-embeddings",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    },
+    "batch_text": {
+      "unit": "requests",
+      "gpu_trigger_units": 1000,
+      "worker": "qwen-text",
+      "api_fallback": "api",
+      "privacy_classes": ["public", "internal"]
+    }
+  },
+  "workers": {
+    "media-image": {
+      "role": "image_generation_or_processing",
+      "backend": "runpod-specialized",
+      "activation": "on_demand",
+      "status": "planned",
+      "hardware_guidance": "RTX 4090/5090 or equivalent",
+      "min_network_volume_gb": 100,
+      "queue_required": true
+    },
+    "media-video": {
+      "role": "video_generation_or_transcode",
+      "backend": "runpod-specialized",
+      "activation": "on_demand",
+      "status": "planned",
+      "hardware_guidance": "A6000/5090 or larger after model benchmark",
+      "min_network_volume_gb": 100,
+      "queue_required": true
+    },
+    "doc-ocr": {
+      "role": "batch_document_ocr",
+      "backend": "paddleocr-gpu",
+      "activation": "on_demand",
+      "status": "installed_tested",
+      "hardware_guidance": "A6000 48GB sequential with Qwen",
+      "min_network_volume_gb": 50,
+      "queue_required": true
+    },
+    "audio-stt": {
+      "role": "batch_speech_to_text",
+      "backend": "faster-whisper-gpu",
+      "activation": "on_demand",
+      "status": "planned",
+      "hardware_guidance": "A5000/4090 or equivalent",
+      "min_network_volume_gb": 50,
+      "queue_required": true
+    },
+    "vector-embeddings": {
+      "role": "large_batch_embeddings",
+      "backend": "te-embedding-or-infinity",
+      "activation": "on_demand",
+      "status": "planned",
+      "hardware_guidance": "CPU/API first; 4090/A5000 for million-document batches",
+      "min_network_volume_gb": 50,
+      "queue_required": true
+    },
+    "qwen-text": {
+      "role": "optional_local_batch_text",
+      "backend": "vllm",
+      "activation": "on_demand",
+      "status": "active_pilot",
+      "hardware_guidance": "RTX A6000 48GB",
+      "min_network_volume_gb": 50,
+      "queue_required": true
+    }
+  }
+}
