@@ -129,6 +129,10 @@ task cloud:usage:live
 # Cloudflare R2 account-level storage/object signal only
 task cloud:r2:usage
 task cloud:r2:usage:live
+
+# GitHub Actions current-month billing usage (minutes/storage)
+task cloud:github:actions
+task cloud:github:actions:live
 ```
 
 The same contract is available at `/api/cloud/usage`; it defaults to local
@@ -156,6 +160,43 @@ the provider adapter is
 Both are read-only and never write SQLite, the data lake, or provider
 resources. Raw provider payloads, account IDs, bucket names, and credential
 values are discarded at the adapter boundary.
+
+### Free cloud/SaaS quota coverage
+
+The same snapshot now includes `usage.free_quota`, built from the
+[`free-resource-index.json`](../../systems/cloud-platform/free-resource-index.json)
+catalog. It lists free-forever and free-quota cloud/SaaS services, their public
+plan-limit references, and the status of a live usage adapter:
+
+| Status | Meaning |
+|---|---|
+| `usage_available` | A bounded adapter returned an observed value and a known free limit |
+| `reference_only` | The service and free-limit reference are cataloged, but no live usage adapter exists |
+| `unavailable` | An adapter exists but the provider request failed; observed usage is omitted |
+| `not_configured` | The required provider credential is not available |
+| `not_connected` | The service has no configured usage connection |
+
+The quota adapters currently cover Cloudflare R2 Standard storage (10 GB-month)
+and GitHub Actions. R2 reports used, remaining, and percentage when account
+metrics are healthy. GitHub Actions reads the current UTC month's billing usage
+report; it reports minutes and storage usage, and calculates remaining minutes
+only when the API or `GITHUB_ACTIONS_PLAN` identifies the plan. Other services
+remain explicit gaps until an official read-only usage endpoint and credential
+scope are verified. The projection is reference/diagnostic data and does not
+claim an invoice or treat failed calls as zero.
+
+The implementation is
+[`scripts/platform/free_quota.py`](../scripts/platform/free_quota.py), and its
+contract is covered by `tests/platform/free_quota_test.py` and
+`tests/platform/github_actions_usage_test.py`. The GitHub adapter is
+[`scripts/platform/github_actions_usage.py`](../scripts/platform/github_actions_usage.py);
+it uses only GitHub's read-only billing usage report, requires
+`GITHUB_PERSONAL_ACCESS_TOKEN`, and uses `GITHUB_BILLING_OWNER_TYPE` plus
+`GITHUB_BILLING_OWNER` for organization billing. A user billing report can
+derive the owner from the authenticated `/user` response without returning the
+login to the dashboard. The official endpoint is limited to accounts on
+GitHub's enhanced billing platform and requires the documented plan or
+organization administration read permission.
 
 ### Vercel billing charges (read-only)
 
