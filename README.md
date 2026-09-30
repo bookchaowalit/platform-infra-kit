@@ -27,7 +27,7 @@ infra/platform/
 │   ├── clusters/{dev,staging,production}/
 │   └── applications/
 ├── policies/kyverno/         ← cluster security policies (Audit → Enforce)
-├── paas-registry.json        ← read-only multi-PaaS provider catalog
+├── cloud-providers.yaml      ← cloud/PaaS provider source of truth
 ├── paas-action-policy.json   ← governed action/resource/approval contract
 └── iac/                      ← provider-neutral Terraform/OpenTofu design
 ```
@@ -61,10 +61,13 @@ This installs platform controllers only. It does not deploy business apps.
 
 ## Multi-PaaS Control Plane
 
-The repository also exposes a small provider-neutral catalog and health surface
-for Vercel, Render, Railway, Fly.io, and Heroku. It is intentionally limited to
-credential state, bounded API health checks, provider metadata, and dashboard
-links. The read surfaces remain independent of mutations. The local owner can
+The repository also exposes a provider-neutral catalog for the cloud and SaaS
+providers used, declared, or evaluated by Solo Empire. The registry records
+auth sources, CLI binaries, implemented capability status, project usage
+evidence, and a proposal-only write policy. A `project_usage.status` of
+`documented`, `planned`, `adapter_only`, or `control_only` is not proof of a
+live deployment. The PaaS health and inventory surfaces currently cover
+Vercel, Render, Railway, Fly.io, and Heroku. The local owner can
 now register, review, approve, submit, and verify Render web-service actions,
 including the bounded `autoDeploy` service setting, from `/cloud`; other
 provider write adapters and environment-variable mutation remain unavailable.
@@ -74,7 +77,7 @@ See [Governed PaaS execution](./PAAS-EXECUTION.md).
 # Show the provider catalog without calling external APIs
 task paas:catalog
 
-# Check whether provider credentials are available locally
+# Show offline provider status without reading secrets or calling APIs
 task paas:health
 
 # Make bounded, read-only API checks (requires provider credentials)
@@ -86,9 +89,10 @@ task paas:inventory:live
 ```
 
 The local task dashboard exposes the same surface at `/api/paas`; it defaults to
-offline credential inspection and accepts `?live=true` for an explicit live
-check. Set provider credentials through the normal runtime secret resolver; the
-variable names are documented in [`infra/.env.example`](../.env.example).
+offline status and accepts `?live=true` for explicit credential resolution and
+provider API checks. Set provider credentials through the normal runtime secret
+resolver; the variable names are documented in
+[`infra/.env.example`](../.env.example).
 
 Render target discovery is a separate bounded read-only surface. Use the local
 CLI session when available, or the server-side API key resolver, and pass only
@@ -103,9 +107,94 @@ The Cloud/PaaS page exposes the same discovery flow and lets the owner select a
 service or recent deploy to populate the action form. Discovery does not make
 deploy, restart, rollback, or configuration changes.
 
-The catalog is [`paas-registry.json`](./paas-registry.json), and the health
+The source of truth is [`cloud-providers.yaml`](./cloud-providers.yaml), and the health
 adapter is [`scripts/platform/paas_health.py`](../scripts/platform/paas_health.py).
-This phase does not persist provider payloads in the data lake.
+Validate the registry with `task cloud:providers:check` or `task platforms:check`.
+It contains names and capability metadata only; no credentials or live account
+payloads are stored here.
+
+Live adapters resolve credentials in this order: the configured secret
+provider/environment policy, then a registered provider CLI session. Results
+include only the source label (`secret_manager`, `env`, or `cli_session`), never
+the credential. If a configured secret provider is unreachable, resolution
+fails closed rather than bypassing it with a CLI session. `vercel whoami` can
+confirm an interactive Vercel session for health checks, but billing API reads
+still require a token; GitHub can use the token returned by `gh auth token`.
+Offline commands do not inspect any of these credential sources.
+
+### Unified cloud status and tool doctor
+
+Use the normalized status command to review all registered providers, or limit
+the report and any live API calls to one provider. Offline is the default;
+`--live` is explicit and remains read-only:
+
+```bash
+task cloud:status
+task cloud:status -- --json
+task cloud:status -- --live --provider vercel
+task cloud:status -- --live --provider cloudflare --json
+task cloud:tools:doctor
+task cloud:tools:doctor -- --json
+task cloud:tools:doctor -- --check-versions
+task cloud:secrets:health -- --offline --json
+task cloud:secrets:health -- --provider neon --json
+```
+
+The status schema separates health, inventory, usage, billing, and auth source.
+Unsupported and not-yet-implemented adapters are reported explicitly instead
+of being treated as zero usage; unchecked or unavailable metrics are omitted
+rather than rendered as zero. Vercel's billing adapter supplies its usage and
+charge summary; GitHub Actions reports usage quantities but not charge amounts.
+The local finance ledger remains an aggregate and is not attributed to a
+provider. Cloudflare R2's storage estimate is not an invoice. The CLI doctor
+only checks whether registry-listed binaries are on `PATH` and prints official
+installation guidance by default. `--check-versions` explicitly runs only the
+fixed version command from the registry, using the resolved executable
+(including Windows `.cmd` shims), a bounded timeout, and no stdin. The default
+timeout is eight seconds; Heroku has a registry-declared 40-second allowance
+for its slower Windows Node startup. Version probes disable supported
+telemetry/auto-update flags and accept numeric versions with build suffixes
+without exposing the suffix or terminal color codes. Only a
+numeric version or classified error is returned; executable paths, raw
+stdout/stderr, account identities and credentials are not returned. Missing
+CLIs are not installed, and no login/session command is run by the doctor.
+The registry includes official Upstash and PostHog CLIs as well as the existing
+12 provider CLIs; registration does not establish an active deployment.
+
+The unified collector also uses bounded GET-only adapters for:
+
+| Provider | Inventory | Usage signal / limitation |
+|---|---|---|
+| Neon | Projects and up to five projects' branches | Billing-period compute hours, current storage bytes, storage byte-hours and transfer bytes; missing values stay null |
+| Cloudflare | Workers and Pages projects; canonical production deployment | R2 retains its existing adapter; Worker request analytics and billed costs remain unavailable |
+| RunPod | Pods and serverless endpoints | Desired pod state and RunPod credits/hour only, not actual runtime or accumulated USD spend |
+| Supabase | Projects and management-reported database status | Project usage and billing adapters remain unavailable |
+| Upstash | Redis databases | Up to five databases' current-month request/bandwidth counters and current storage; billing currency is not assumed |
+
+Each list is capped at 20 items, with a maximum of five detail reads per
+resource type. Pagination/truncation and detail failures are explicit; a
+partial result is not an account-wide total. Transport rejects redirects,
+limits response bodies to 2 MiB, and uses a 15-second timeout. Raw environment
+variables, database hosts, public IPs, connection strings and resource secrets
+are discarded. Management API health means access to those reads, not uptime.
+Neon personal keys can require `NEON_ORG_ID`; Upstash requires
+`UPSTASH_EMAIL` plus a Developer API `UPSTASH_API_KEY`, not a Redis REST token.
+
+`paas:inventory` keeps its five-PaaS default for compatibility; explicit
+`--provider neon|cloudflare|runpod|supabase|upstash` selects the new read adapter.
+`task gpu:workers:status -- --live` adds the same RunPod read projection to
+the local queue report without launching, stopping or modifying a worker.
+Default GPU status remains local-only.
+
+Cloud secret health lists only registry names and presence classifications.
+`--offline` does not read a secret store or environment values; without that
+flag the check is explicit. A missing alias or optional configuration name
+does not itself mean authentication is impossible. CLI sessions are not
+checked by secret-name presence. See
+[runtime secret management](../../systems/cloud-platform/secret-management.md).
+Cloud status currently writes no persisted dashboard/data-lake projection or
+quota notification; those integrations and credential-backed live verification
+remain separate work.
 
 The bounded inventory adapter is [`scripts/platform/paas_inventory.py`](../scripts/platform/paas_inventory.py).
 It returns only resource IDs, names, and a small set of non-secret metadata;
@@ -133,6 +222,10 @@ task cloud:r2:usage:live
 # GitHub Actions current-month billing usage (minutes/storage)
 task cloud:github:actions
 task cloud:github:actions:live
+
+# Vercel billing summary
+task cloud:vercel:billing
+task cloud:vercel:billing:live
 ```
 
 The same contract is available at `/api/cloud/usage`; it defaults to local

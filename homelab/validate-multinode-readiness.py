@@ -10,11 +10,15 @@ from __future__ import annotations
 
 import argparse
 import re
-import stat
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "infra" / "platform"))
+sys.path.insert(0, str(ROOT / "infra" / "scripts" / "platform"))
+from platform_output import configure_utf8_stdio  # noqa: E402
+from git_file_mode import FileModeError, has_executable_bit  # noqa: E402
+
 DOCS = ROOT / "operations" / "platform"
 BOOT = ROOT / "infra" / "platform" / "bootstrap" / "homelab"
 
@@ -130,8 +134,12 @@ def validate_script(c: Checker) -> None:
     if not SCRIPT.exists():
         c.fail("audit script missing")
         return
-    mode = SCRIPT.stat().st_mode
-    if mode & stat.S_IXUSR:
+    try:
+        executable = has_executable_bit(SCRIPT, ROOT)
+    except FileModeError:
+        c.fail("could not verify audit script executable mode")
+        return
+    if executable:
         c.ok("audit script executable")
     else:
         c.fail("audit script not executable")
@@ -200,6 +208,7 @@ def validate_doc_secrets_and_updates(c: Checker) -> None:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
     c = Checker()

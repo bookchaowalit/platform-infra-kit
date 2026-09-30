@@ -26,6 +26,9 @@ SCRIPTS = Path(__file__).resolve().parent
 ONBOARDING = SCRIPTS.parent
 PLATFORM = ONBOARDING.parent
 ROOT = PLATFORM.parent.parent
+sys.path.insert(0, str(ROOT / "infra" / "scripts" / "platform"))
+from platform_output import configure_utf8_stdio  # noqa: E402
+
 GITOPS = PLATFORM / "gitops" / "applications"
 VALUES_STAGING = GITOPS / "values" / "staging"
 HELM = PLATFORM / "helm" / "solo-app"
@@ -360,6 +363,7 @@ def validate_data_contract_doc_fields(c: Checker) -> None:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
     c = Checker()

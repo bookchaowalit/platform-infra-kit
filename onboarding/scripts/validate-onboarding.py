@@ -31,6 +31,8 @@ CATALOG = GITOPS / "catalog" / "apps.yaml"
 INVENTORY = PLATFORM / "APP-INVENTORY.yaml"
 APPS_DIR = ONBOARDING / "apps"
 DOCS_PLATFORM = ROOT / "operations" / "platform"
+sys.path.insert(0, str(ROOT / "infra" / "scripts" / "platform"))
+from platform_output import configure_utf8_stdio  # noqa: E402
 
 sys.path.insert(0, str(SCRIPTS))
 
@@ -498,6 +500,7 @@ def validate_docs_and_contract(c: Checker) -> None:
 
 
 def main() -> int:
+    configure_utf8_stdio()
     parser = argparse.ArgumentParser()
     parser.add_argument("--quiet-header", action="store_true")
     args = parser.parse_args()
