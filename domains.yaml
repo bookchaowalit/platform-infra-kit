@@ -50,9 +50,9 @@ platform:
     target: railway
     target_ref: railway project solo-ai-gateway / service ai-gateway (gateway already hosted)
     access: public-token
-    status: reserved
+    status: live
     phase: P2
-    note: Railway custom domain created 2026-10-03 (syncStatus CREATING); serves /healthz and /api/ai/* until the full API moves here
+    note: live 2026-10-03 (Railway custom domain verified, certificate valid, /healthz 200); serves /healthz and /api/ai/* until the full API moves here
     dns:
       - {type: CNAME, content: 4wsqh2bq.up.railway.app, proxied: false}
       - {type: TXT, name: _railway-verify.api.bookchaowalit.com, content: "railway-verify=8e92cafdca616c1985561df8bdcf2d4751ef9943dbba1a1d41a9ab8fb0c34cac"}
@@ -104,9 +104,13 @@ platform:
     target: vercel
     target_ref: apps/crm-web → crm-api on Railway → Neon (infra/deploy/crm-api/README.md)
     access: protected
-    status: reserved
+    status: live
     phase: Slice A3
-    note: owner/partner session login until Cloudflare Access can cover a DNS-only Vercel host
+    note: >-
+      live 2026-10-03 — Vercel project bookchaowalit-crm-web → crm-api on Railway project agency-crm
+      (crm-api-production-a7e0.up.railway.app) → Neon project agency-crm. Owner and partner login verified;
+      partner limited to the agency workspace. Owner/partner session login until Cloudflare Access can
+      cover a DNS-only Vercel host.
   - host: studio.bookchaowalit.com
     purpose: production-console-web (production tools console)
     xaas: paas
