@@ -69,7 +69,7 @@ platform:
     target: cloudflare-workers
     access: public-signed
     status: reserved
-    phase: P2
+    phase: Slice A4
   - host: hub.bookchaowalit.com
     purpose: Tools Hub, provider registry, and XaaS learning map
     xaas: paas
@@ -99,12 +99,14 @@ platform:
     status: reserved
     phase: P2
   - host: crm.bookchaowalit.com
-    purpose: crm-web
+    purpose: crm-web agency desk for Book and partner (mobile-first)
     xaas: paas
     target: vercel
+    target_ref: apps/crm-web → crm-api on Railway → Neon (infra/deploy/crm-api/README.md)
     access: protected
     status: reserved
-    phase: P5
+    phase: Slice A3
+    note: owner/partner session login until Cloudflare Access can cover a DNS-only Vercel host
   - host: studio.bookchaowalit.com
     purpose: production-console-web (production tools console)
     xaas: paas
