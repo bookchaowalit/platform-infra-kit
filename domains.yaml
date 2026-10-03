@@ -52,6 +52,10 @@ platform:
     access: public-token
     status: reserved
     phase: P2
+    note: Railway custom domain created 2026-10-03 (syncStatus CREATING); serves /healthz and /api/ai/* until the full API moves here
+    dns:
+      - {type: CNAME, content: 4wsqh2bq.up.railway.app, proxied: false}
+      - {type: TXT, name: _railway-verify.api.bookchaowalit.com, content: "railway-verify=8e92cafdca616c1985561df8bdcf2d4751ef9943dbba1a1d41a9ab8fb0c34cac"}
   - host: mcp.bookchaowalit.com
     purpose: remote MCP server for every agent and device
     xaas: faas
