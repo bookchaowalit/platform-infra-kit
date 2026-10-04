@@ -129,7 +129,7 @@ services:
   - {id: bank-transfer, category: payments, name: Bank transfer confirmation, decision: buy, difficulty: 4, primary: Bank API, alternatives: [Opn Payments (Omise)], data_class: sensitive, approval: true}
   - {id: recurring-payment, category: payments, name: Recurring charges, decision: buy, difficulty: 4, primary: Stripe, alternatives: [Opn Payments (Omise), Paddle], refs: [stripe, paddle], data_class: sensitive, approval: true}
   - {id: subscription-billing, category: payments, name: "Plans, trials, proration, dunning", decision: buy, difficulty: 3, primary: Stripe Billing, alternatives: [Paddle, Lago], refs: [stripe, paddle], phase: next, data_class: sensitive, approval: true}
-  - {id: invoice, category: payments, name: Invoices and receipts (Thai format), decision: build, difficulty: 1, primary: Central invoice generator, alternatives: [Stripe Invoicing, FlowAccount], refs: [stripe], phase: next, data_class: personal}
+  - {id: invoice, category: payments, name: Invoices and receipts (Thai format), decision: build, difficulty: 1, primary: Central invoice generator, alternatives: [Stripe Invoicing, FlowAccount], refs: [stripe], phase: next, data_class: personal, status: partial, contract: POST /api/platform/billing/invoices/preview, impl: [infra/api/platform/thai_tax.ts], note: "Preview only (VAT, withholding, Thai baht text, tax ID check); numbering and issuing stay with the accounting partner."}
   - {id: refund, category: payments, name: Refunds, decision: buy, difficulty: 4, primary: Stripe, alternatives: [Opn Payments (Omise)], refs: [stripe], data_class: sensitive, approval: true}
   - {id: payout, category: payments, name: Payouts to sellers or partners, decision: buy, difficulty: 4, primary: Stripe Connect, alternatives: [Opn Payments (Omise) transfers, Wise], refs: [stripe, wise], data_class: sensitive, approval: true}
   - {id: marketplace-payment, category: payments, name: Split payments for marketplaces, decision: buy, difficulty: 5, primary: Stripe Connect, alternatives: [Opn Payments (Omise)], refs: [stripe], data_class: sensitive, approval: true}
@@ -139,7 +139,7 @@ services:
   - {id: reconciliation, category: payments, name: Payment and bank reconciliation, decision: hybrid, difficulty: 3, primary: Central reconciliation job, alternatives: [Modern Treasury], refs: [stripe], phase: later, data_class: sensitive}
 
   # 5. Communication
-  - {id: email, category: communication, name: Email delivery, decision: buy, difficulty: 2, primary: Resend, alternatives: [Postmark, Amazon SES, Cloudflare Email Service], refs: [resend, aws, cloudflare], phase: now, data_class: personal, contract: POST /api/platform/messages/email}
+  - {id: email, category: communication, name: Email delivery, decision: buy, difficulty: 2, primary: Resend, alternatives: [Postmark, Amazon SES, Cloudflare Email Service], refs: [resend, aws, cloudflare], phase: now, data_class: personal, contract: POST /api/platform/messages/email, status: partial, impl: [infra/api/platform/email.ts], note: "Validated Resend adapter; dry-run until PLATFORM_EMAIL_SEND_ENABLED, RESEND_API_KEY, and PLATFORM_EMAIL_FROM are set."}
   - {id: transactional-email, category: communication, name: Templated transactional email, decision: hybrid, difficulty: 2, primary: Central templates + Resend, alternatives: [Postmark], refs: [resend], phase: now, data_class: personal}
   - {id: sms, category: communication, name: SMS, decision: buy, difficulty: 3, primary: Thai SMS gateway (ThaiBulkSMS), alternatives: [Twilio], refs: [twilio], phase: later, data_class: personal}
   - {id: otp, category: communication, name: One-time passcode delivery and check, decision: buy, difficulty: 4, primary: Twilio Verify, alternatives: [ThaiBulkSMS OTP, Clerk], refs: [twilio], phase: later, data_class: personal}
@@ -154,7 +154,7 @@ services:
 
   # 6. File / Media / Storage
   - {id: object-storage, category: media, name: Object storage, decision: buy, difficulty: 4, primary: Cloudflare R2, alternatives: [Amazon S3, Supabase Storage], refs: [cloudflare, aws, supabase], status: partial, phase: now, impl: [infra/scripts/platform/cloudflare_r2_usage.py]}
-  - {id: file-upload, category: media, name: Presigned upload and download, decision: build, difficulty: 1, primary: Central presign route over R2, alternatives: [UploadThing], refs: [cloudflare], phase: now, data_class: personal, contract: POST /api/platform/files/presign}
+  - {id: file-upload, category: media, name: Presigned upload and download, decision: build, difficulty: 1, primary: Central presign route over R2, alternatives: [UploadThing], refs: [cloudflare], phase: now, data_class: personal, contract: POST /api/platform/files/presign, status: partial, impl: [infra/api/platform/files.ts], note: "SigV4 presign with app-scoped keys and signed content-length; returns 503 until R2_* settings exist."}
   - {id: image-processing, category: media, name: "Resize, crop, format conversion", decision: buy, difficulty: 3, primary: Cloudflare Images, alternatives: [Cloudinary, imgix], refs: [cloudflare], phase: later}
   - {id: image-cdn, category: media, name: Image CDN, decision: buy, difficulty: 3, primary: Cloudflare Images, alternatives: [Cloudinary], refs: [cloudflare], phase: later}
   - {id: video-hosting, category: media, name: Video hosting and streaming, decision: buy, difficulty: 4, primary: Cloudflare Stream, alternatives: [Mux], refs: [cloudflare]}
@@ -250,7 +250,7 @@ services:
   - {id: order-management, category: commerce, name: Orders and fulfilment states, decision: build, difficulty: 3, primary: Central commerce module, alternatives: [], data_class: personal}
   - {id: promotion, category: commerce, name: Promotions and pricing rules, decision: build, difficulty: 3, primary: Central pricing rules, alternatives: []}
   - {id: coupon, category: commerce, name: Coupons, decision: build, difficulty: 1, primary: Central pricing rules, alternatives: [Stripe coupons], refs: [stripe]}
-  - {id: tax, category: commerce, name: Tax calculation (VAT / withholding), decision: hybrid, difficulty: 4, primary: Thai VAT rules + accounting partner, alternatives: [Avalara, Stripe Tax], refs: [stripe], approval: true}
+  - {id: tax, category: commerce, name: Tax calculation (VAT / withholding), decision: hybrid, difficulty: 4, primary: Thai VAT rules + accounting partner, alternatives: [Avalara, Stripe Tax], refs: [stripe], approval: true, status: partial, contract: POST /api/platform/commerce/tax/quote, impl: [infra/api/platform/thai_tax.ts], note: Standard Thai VAT 7% and withholding rates only; filing stays with the accounting partner.}
   - {id: shipping, category: commerce, name: Shipping labels and rates, decision: buy, difficulty: 4, primary: Thai carrier aggregator (Shippop), alternatives: [Easyship, Shippo], data_class: personal}
   - {id: tracking, category: commerce, name: Shipment tracking, decision: buy, difficulty: 4, primary: AfterShip, alternatives: [Carrier APIs], data_class: personal}
   - {id: returns, category: commerce, name: Returns, decision: build, difficulty: 3, primary: Central commerce module, alternatives: []}
