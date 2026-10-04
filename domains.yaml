@@ -111,6 +111,15 @@ platform:
       (crm-api-production-a7e0.up.railway.app) → Neon project agency-crm. Owner and partner login verified;
       partner limited to the agency workspace. Owner/partner session login until Cloudflare Access can
       cover a DNS-only Vercel host.
+  - host: pipeline.bookchaowalit.com
+    purpose: personal income pipeline (freelance, remote contract, language-practice roles) — Book only
+    xaas: paas
+    target: vercel
+    target_ref: Vercel bookchaowalit-income-pipeline → Railway income-pipeline/crm-api → Neon income-pipeline
+    access: protected
+    status: live
+    phase: Income Engine E3
+    note: live 2026-10-04 — same crm-api/crm-web image as crm.; owner login verified; separate data from the agency
   - host: studio.bookchaowalit.com
     purpose: production-console-web (production tools console)
     xaas: paas
