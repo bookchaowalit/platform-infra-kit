@@ -78,6 +78,7 @@ platform:
     access: protected
     status: reserved
     phase: P2
+    note: Static site rendered from dashboard/TOOLS-HUB.md by task hub:site:build; not deployed, pending wrangler login, Cloudflare Access policy, and owner approval for task hub:site:deploy
   - host: data.bookchaowalit.com
     purpose: read-only job.v1 data API over the R2 lake (book-job-data)
     xaas: paas
