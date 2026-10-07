@@ -70,6 +70,7 @@ platform:
     access: public-signed
     status: reserved
     phase: Slice A4
+    note: Worker source in infra/hooks-worker (solo-empire-hooks, Stripe-only slice); not deployed, pending owner R2 bucket, secret, and DNS binding
   - host: hub.bookchaowalit.com
     purpose: Tools Hub, provider registry, and XaaS learning map
     xaas: paas
@@ -80,10 +81,11 @@ platform:
   - host: data.bookchaowalit.com
     purpose: read-only job.v1 data API over the R2 lake (book-job-data)
     xaas: paas
-    target: render
+    target: railway
     access: public-token
     status: reserved
     phase: P2
+    note: Railway selected 2026-10-05; reserved target only, pending book-job-data migration and owner-approved DNS binding
   - host: monitor.bookchaowalit.com
     purpose: existing Cloudflare Worker uptime monitor (solo-empire-monitor)
     xaas: faas
