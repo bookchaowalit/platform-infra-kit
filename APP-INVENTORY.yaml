@@ -35,10 +35,10 @@ applications:
 
   - id: booknbook
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/booknbook
     components:
       - id: app
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/booknbook/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/booknbook/Dockerfile
     status: approved
     deployable: true
     image_repository: k3d-solo-registry:5000/solo-empire/booknbook
@@ -57,14 +57,14 @@ applications:
 
   - id: bookmarketing
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookmarketing
     components:
       - id: web
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/web/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookmarketing/web/Dockerfile
       - id: api-go
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/api-go/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookmarketing/api-go/Dockerfile
       - id: api-python
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookmarketing/api-python/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookmarketing/api-python/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -73,14 +73,14 @@ applications:
 
   - id: bookreading
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookreading
     components:
       - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/frontend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookreading/frontend/Dockerfile
       - id: ai-service
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/ai-service/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookreading/ai-service/Dockerfile
       - id: backend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-products/bookreading/backend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/bookreading/backend/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -89,14 +89,14 @@ applications:
 
   - id: booktrading
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading
     components:
       - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/frontend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading/frontend/Dockerfile
       - id: backend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/backend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading/backend/Dockerfile
       - id: strategy
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/book-products/booktrading/strategy/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading/strategy/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -105,12 +105,12 @@ applications:
 
   - id: localcrm
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-products/private/book-products
     components:
       - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products/localcrm-frontend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/private/book-products/localcrm-frontend/Dockerfile
       - id: backend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/book-products/localcrm-backend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-products/private/book-products/localcrm-backend/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
@@ -119,10 +119,10 @@ applications:
 
   - id: linerichmenu
     source_boundary: book-dev
-    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/book-apps/portfolio/bookchaowalit-linerichmenu-frontend
+    source_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/bookchaowalit-linerichmenu-frontend
     components:
       - id: frontend
-        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/book-apps/portfolio/bookchaowalit-linerichmenu-frontend/Dockerfile
+        dockerfile: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/bookchaowalit-linerichmenu-frontend/Dockerfile
     status: candidate
     deployable: false
     image_repository: TBD
