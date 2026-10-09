@@ -19,10 +19,10 @@ mkdir -p "$SNAP_DIR"
 mkdir -p "$SNAP_DIR/infra/platform"
 cp -a "$REPO_ROOT/infra/platform/helm" "$SNAP_DIR/infra/platform/"
 cp -a "$REPO_ROOT/infra/platform/gitops" "$SNAP_DIR/infra/platform/"
-mkdir -p "$SNAP_DIR/engagements/internal/solo-empire"
-if [[ -d "$REPO_ROOT/engagements/internal/solo-empire/ai-doc-assistant" ]]; then
-  cp -a "$REPO_ROOT/engagements/internal/solo-empire/ai-doc-assistant" \
-    "$SNAP_DIR/engagements/internal/solo-empire/"
+mkdir -p "$SNAP_DIR/projects/product/engineering/book-dev/github/bookchaowalit/private"
+if [[ -d "$REPO_ROOT/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant" ]]; then
+  cp -a "$REPO_ROOT/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant" \
+    "$SNAP_DIR/projects/product/engineering/book-dev/github/bookchaowalit/private/"
 fi
 
 # Init git on host (nodes may not have git)
