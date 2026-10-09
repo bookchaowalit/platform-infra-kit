@@ -160,7 +160,7 @@ services:
   - {id: video-hosting, category: media, name: Video hosting and streaming, decision: buy, difficulty: 4, primary: Cloudflare Stream, alternatives: [Mux], refs: [cloudflare]}
   - {id: video-transcoding, category: media, name: Video transcoding, decision: buy, difficulty: 4, primary: Mux, alternatives: [AWS MediaConvert, Cloudflare Stream], refs: [aws, cloudflare]}
   - {id: document-storage, category: media, name: Business document storage, decision: build, difficulty: 1, primary: Central metadata + R2, alternatives: [Google Drive], refs: [cloudflare, google-drive], phase: next, data_class: personal}
-  - {id: pdf-generation, category: media, name: PDF generation, decision: build, difficulty: 1, primary: Shared HTML-to-PDF renderer, alternatives: [PDF API service], status: partial, phase: next, impl: [services/document-production-api]}
+  - {id: pdf-generation, category: media, name: PDF generation, decision: build, difficulty: 1, primary: Shared HTML-to-PDF renderer, alternatives: [PDF API service], status: partial, phase: next, impl: [projects/product/engineering/book-dev/github/bookchaowalit/private/book-production-platform/services/document-production-api]}
   - {id: e-signature-media, category: media, name: Signed document storage, decision: build, difficulty: 1, primary: Central metadata + R2 with immutable versions, alternatives: [], refs: [cloudflare], phase: on_demand, data_class: personal}
   - {id: document-conversion, category: media, name: Office / PDF conversion, decision: hybrid, difficulty: 3, primary: Self-hosted Gotenberg, alternatives: [CloudConvert], phase: later}
 
