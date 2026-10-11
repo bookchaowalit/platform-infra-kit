@@ -1,0 +1,221 @@
+name: Platform Validate
+
+# Validates Kubernetes platform assets without deploying anything.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/platform/**"
+      - "infra/tests/platform/platform_validation_test.py"
+      - ".github/workflows/platform-validate.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/platform/**"
+      - "infra/tests/platform/platform_validation_test.py"
+      - ".github/workflows/platform-validate.yml"
+
+concurrency:
+  group: platform-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  platform-python-guards:
+    name: Platform Python Guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install PyYAML (onboarding + inventory parsers)
+        run: python3 -m pip install --user pyyaml
+      - name: Run platform validation tests
+        run: python3 infra/tests/platform/platform_validation_test.py --strict-platform
+      - name: Run onboarding validation guards
+        run: python3 infra/platform/onboarding/scripts/validate-onboarding.py
+      - name: Run observability offline validation
+        run: python3 infra/platform/observability/validate-observability.py
+      - name: Syntax-check Homelab observability script
+        run: bash -n infra/platform/bootstrap/homelab/verify-homelab-observability.sh
+      - name: Run multi-node readiness offline validation
+        run: python3 infra/platform/homelab/validate-multinode-readiness.py
+      - name: Syntax-check multi-node readiness audit script
+        run: bash -n infra/platform/bootstrap/homelab/audit-multinode-readiness.sh
+      - name: Run Homelab URL catalog offline validation
+        run: python3 infra/platform/homelab/validate-url-catalog.py
+      - name: Syntax-check Homelab URL/DNS scripts
+        run: |
+          bash -n infra/platform/bootstrap/homelab/sync-homelab-dns.sh
+          bash -n infra/platform/bootstrap/homelab/verify-homelab-urls.sh
+
+  helm-lint-and-template:
+    name: Helm Lint & Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.15.4
+      - name: Helm lint solo-app
+        run: helm lint infra/platform/helm/solo-app
+      - name: Helm template (dev example-api)
+        run: |
+          helm template example-api infra/platform/helm/solo-app \
+            -f infra/platform/gitops/applications/values/dev/common.yaml \
+            -f infra/platform/gitops/applications/values/dev/example-api.yaml \
+            > /tmp/solo-app-dev.yaml
+          test -s /tmp/solo-app-dev.yaml
+      - name: Fail on :latest in rendered production-target chart
+        run: |
+          set -euo pipefail
+          helm template example-api infra/platform/helm/solo-app \
+            -f infra/platform/gitops/applications/values/production/common.yaml \
+            -f infra/platform/gitops/applications/values/production/example-api.yaml \
+            > /tmp/solo-app-prod.yaml
+          if grep -E 'image:.*:latest(["[:space:]]|$)' /tmp/solo-app-prod.yaml; then
+            echo "FAIL: :latest image tag found in production render"
+            exit 1
+          fi
+          echo "OK: no :latest in production render"
+      - name: Helm template staging pilots (values only; not deploy)
+        run: |
+          set -euo pipefail
+          for app in ai-doc-assistant booknbook; do
+            out="/tmp/solo-app-staging-${app}.yaml"
+            # Staging values use git-pending; chart rejects only :latest.
+            # Override tag for render so template succeeds offline.
+            helm template "${app}" infra/platform/helm/solo-app \
+              -f infra/platform/gitops/applications/values/staging/common.yaml \
+              -f "infra/platform/gitops/applications/values/staging/${app}.yaml" \
+              --set image.tag=git-ci-render-only \
+              > "${out}"
+            test -s "${out}"
+            if grep -E 'image:.*:latest(["[:space:]]|$)' "${out}"; then
+              echo "FAIL: :latest in staging render for ${app}"
+              exit 1
+            fi
+            if ! grep -q 'kind: NetworkPolicy' "${out}"; then
+              echo "FAIL: NetworkPolicy missing in staging render for ${app}"
+              exit 1
+            fi
+            echo "OK staging render ${app}"
+          done
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: helm-rendered
+          path: |
+            /tmp/solo-app-dev.yaml
+            /tmp/solo-app-prod.yaml
+            /tmp/solo-app-staging-*.yaml
+
+  kubeconform:
+    name: Kubernetes Schema Validation
+    runs-on: ubuntu-latest
+    needs: helm-lint-and-template
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.15.4
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          KUBECONFORM_VERSION=0.6.7
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar xz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+      - name: Render and validate
+        run: |
+          set -euo pipefail
+          helm template example-api infra/platform/helm/solo-app \
+            -f infra/platform/gitops/applications/values/dev/example-api.yaml \
+            | kubeconform -strict -summary \
+                -ignore-missing-schemas \
+                -skip ExternalSecret,ScaledObject,ServiceMonitor,HTTPRoute
+      - name: Validate Kyverno policy YAML structure
+        run: |
+          set -euo pipefail
+          # kubeconform may not know Kyverno CRDs; still check YAML parses
+          python3 - <<'PY'
+          import sys, pathlib
+          try:
+              import yaml
+          except ImportError:
+              import subprocess
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "pyyaml", "-q"])
+              import yaml
+          root = pathlib.Path("infra/platform/policies/kyverno")
+          for path in sorted(root.glob("*.yaml")):
+              docs = list(yaml.safe_load_all(path.read_text()))
+              assert docs, path
+              print(f"OK {path}")
+          PY
+
+  trivy-config:
+    name: Trivy Config Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Run Trivy config scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: infra/platform
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          format: table
+
+  secret-and-latest-scan:
+    name: Secrets and Latest Tag Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install PyYAML
+        run: python3 -m pip install --user pyyaml
+      - name: Detect hardcoded secrets and :latest in platform
+        run: python3 infra/tests/platform/platform_validation_test.py --strict-platform
+      - name: Onboarding guards (immutable tags, probes, data_contract)
+        run: python3 infra/platform/onboarding/scripts/validate-onboarding.py
+
+  supply-chain-contract:
+    name: Supply-chain Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate image policy and signing boundary
+        run: python3 infra/platform/supply-chain/validate-image-policy.py
+
+  tofu-fmt:
+    name: OpenTofu/Terraform Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install OpenTofu
+        run: |
+          set -euo pipefail
+          VER=1.9.1
+          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${VER}/tofu_${VER}_linux_amd64.zip" -o /tmp/tofu.zip
+          sudo unzip -o /tmp/tofu.zip -d /usr/local/bin tofu
+          tofu version
+      - name: Sanity-check tracked module count
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find infra/platform/iac -type f \( -name '*.tf' -o -name '*.tofu' \) 2>/dev/null || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Terraform/OpenTofu files — unexpected for staging IaC."
+            exit 1
+          fi
+      - name: Format + preflight + validate + plan staging (provision=false only, never applies)
+        # Delegates to the same script an operator runs locally
+        # (infra/platform/iac/scripts/plan-staging.sh) instead of
+        # duplicating its logic, so CI and the documented safe path
+        # can't drift apart. That script formats, hides backend.tf so
+        # the S3 backend block isn't required for a local scaffold plan
+        # (restoring it after), runs preflight-staging.sh, then
+        # init/validate/plan with provision=false and a dummy token.
+        run: bash infra/platform/iac/scripts/plan-staging.sh
