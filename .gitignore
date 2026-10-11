@@ -5,3 +5,15 @@ __pycache__/
 *.pyc
 .terraform/
 *.tfstate*
+
+# carried over from solo-empire root .gitignore
+!infra/platform/iac/modules/secrets/
+!infra/platform/iac/modules/secrets/**
+infra/platform/bootstrap/local/pilot.env
+infra/platform/helm/solo-app/pilot/*
+infra/platform/iac/**/terraform.tfvars
+infra/platform/iac/**/*.auto.tfvars
+infra/platform/iac/**/generated/
+infra/platform/iac/**/backend.hcl
+infra/platform/iac/**/*.tfplan
+infra/platform/iac/**/backend.tf
