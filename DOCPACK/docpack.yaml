@@ -1,0 +1,8 @@
+system_id: bookchaowalit/private/solo-platform-kit
+prefix: CARD
+brand: "SOLO PLATFORM KIT"
+subtitle: "ชุดสินทรัพย์แพลตฟอร์ม: OpenTofu, Argo CD, Helm chart, Kyverno policy, onboarding, observability"
+footer: "solo-platform-kit — Product Card"
+color: "#274c77"
+audience: internal
+tier: L0
