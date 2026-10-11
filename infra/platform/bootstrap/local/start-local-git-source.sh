@@ -31,11 +31,12 @@ rsync -a \
   --exclude '**/__pycache__' \
   "$ROOT/" "$SNAP_SRC/"
 
-if [[ -d "$ROOT/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant" ]]; then
+APP_SRC="${SOLO_BOOK_DEV_ROOT:+$SOLO_BOOK_DEV_ROOT/github/bookchaowalit/private/ai-doc-assistant}"
+if [[ -n "$APP_SRC" && -d "$APP_SRC" ]]; then
   rm -rf "$SNAP_SRC/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant"
   mkdir -p "$SNAP_SRC/projects/product/engineering/book-dev/github/bookchaowalit/private"
   rsync -a --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
-    "$ROOT/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant/" \
+    "$APP_SRC/" \
     "$SNAP_SRC/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant/"
 fi
 

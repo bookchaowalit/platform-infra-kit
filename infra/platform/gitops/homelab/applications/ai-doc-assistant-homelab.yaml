@@ -17,7 +17,7 @@ metadata:
 spec:
   project: solo-empire-apps
   source:
-    repoURL: git@github.com:bookchaowalit/solo-empire.git
+    repoURL: git@github.com:bookchaowalit/solo-platform-kit.git
     targetRevision: main
     path: infra/platform/helm/solo-app
     helm:

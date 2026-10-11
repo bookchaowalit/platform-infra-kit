@@ -32,11 +32,11 @@ Private-LAN K3s GitOps sources for non-production portfolio workloads.
 
 ## Repository access (durable)
 
-The monorepo `bookchaowalit/solo-empire` is private. Homelab Argo CD uses:
+The repository `bookchaowalit/solo-platform-kit` is private. Homelab Argo CD uses:
 
 | Item | Value |
 |------|-------|
-| `repoURL` | `git@github.com:bookchaowalit/solo-empire.git` |
+| `repoURL` | `git@github.com:bookchaowalit/solo-platform-kit.git` |
 | Credential | read-only deploy key in cluster secret `repo-solo-empire-github` |
 | Branch | `main` |
 | Application | `platform-smoke-homelab` → Synced / Healthy |

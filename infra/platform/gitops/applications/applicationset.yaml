@@ -17,7 +17,7 @@ spec:
     - matrix:
         generators:
           - git:
-              repoURL: https://github.com/example/solo-empire.git
+              repoURL: https://github.com/example/solo-platform-kit.git
               revision: main
               files:
                 - path: infra/platform/gitops/applications/catalog/apps.yaml
@@ -58,7 +58,7 @@ spec:
     spec:
       project: solo-empire
       source:
-        repoURL: https://github.com/example/solo-empire.git
+        repoURL: https://github.com/example/solo-platform-kit.git
         targetRevision: main
         path: infra/platform/helm/solo-app
         helm:

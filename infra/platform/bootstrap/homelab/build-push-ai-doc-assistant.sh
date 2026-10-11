@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-APP_DIR="${ROOT}/projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant"
+APP_DIR="${SOLO_BOOK_DEV_ROOT:?set SOLO_BOOK_DEV_ROOT to the Book Dev folder that contains github/}/github/bookchaowalit/private/ai-doc-assistant"
 REGISTRY_HOST="${REGISTRY_HOST:-registry.homelab.local}"
 REGISTRY_PORT="${REGISTRY_PORT:-5000}"
 IMAGE_NAME="${IMAGE_NAME:-solo-empire/ai-doc-assistant}"

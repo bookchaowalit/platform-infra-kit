@@ -26,4 +26,4 @@ CI: `.github/workflows/platform-validate.yml` (ย้ายมาจาก solo-
 ## หมายเหตุสำคัญ
 
 - `operations/{platform,ai,runbooks}/` ใน repo นี้เป็นสำเนา snapshot ของเอกสารที่ validator ตรวจ (ต้นฉบับยังอยู่ใน solo-empire); แก้เอกสารที่ validator ตรวจต้องแก้ทั้งสองที่จนกว่าจะเลือกเจ้าของเดียว
-- `infra/platform/gitops/homelab/applications/platform-smoke-homelab.yaml` ยังชี้ `repoURL: git@github.com:bookchaowalit/solo-empire.git` path `infra/platform/...` — ต้องแก้ให้ชี้ repo นี้ก่อน Argo sync ครั้งต่อไป (ไม่ได้แก้ในงานย้ายเพราะกระทบ cluster จริง)
+- Argo CD Applications ใน `infra/platform/gitops/homelab/applications/` ชี้ `repoURL: git@github.com:bookchaowalit/solo-platform-kit.git` path `infra/platform/...` แล้ว (ยังไม่ได้ apply กับ cluster; ต้อง sync เองหลัง merge)
