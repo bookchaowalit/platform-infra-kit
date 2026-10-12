@@ -20,7 +20,7 @@ spec:
   source:
     # Durable private-repo source via SSH + read-only deploy key registered in
     # Argo CD out of band (never commit credentials).
-    repoURL: git@github.com:bookchaowalit/solo-platform-kit.git
+    repoURL: git@github.com:bookchaowalit/platform-kit.git
     targetRevision: main
     path: infra/platform/gitops/homelab/platform-smoke
   destination:
