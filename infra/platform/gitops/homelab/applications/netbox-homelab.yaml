@@ -17,7 +17,7 @@ metadata:
 spec:
   project: solo-empire-apps
   source:
-    repoURL: git@github.com:bookchaowalit/platform-kit.git
+    repoURL: git@github.com:bookchaowalit/platform-infra-kit.git
     targetRevision: main
     path: infra/platform/gitops/homelab/netbox
   destination:
