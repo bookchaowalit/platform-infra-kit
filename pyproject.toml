@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "platform-infra-kit"
+version = "0.1.0"
+requires-python = ">=3.12"
+description = "Portable shared-service release, runtime and recovery tools"
+dependencies = ["platform-backend-core==0.1.0", "platform-observability==0.1.0", "PyYAML>=6,<7", "uvicorn>=0.30,<1"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "httpx>=0.27,<1"]
+
+[tool.setuptools.packages.find]
+include = ["shared_infra*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
