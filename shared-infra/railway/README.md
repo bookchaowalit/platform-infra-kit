@@ -31,8 +31,11 @@ folders; archive links, traversal, `.gitmodules` and special files are rejected.
 Streaming extraction caps raw headers at 20,000, declared file bytes and actual
 gzip-expanded bytes (including tar headers/padding) at 100 MB, extended metadata
 headers at 1 MB and metadata nesting at 32. Limits apply before PAX/GNU payload
-parsing and during decompression; the builder never parses the complete archive
-into an unbounded member list.
+parsing and during decompression. Global and effective per-entry PAX metadata are
+limited to 128 keys and 65,536 decoded key/value characters before inheritance or
+copying; GitHub's global commit comment and local long-path metadata are supported.
+Processed members are discarded during extraction on both Python 3.12 and 3.14,
+so retained member dictionaries cannot grow with the archive entry count.
 No local ignored `build/lib`, editable checkout or untracked source enters wheels.
 Builds fix SOURCE_DATE_EPOCH to1980-01-01 and disable ambient pip configuration/cache.
 The final image installs the exact regular wheel set offline with

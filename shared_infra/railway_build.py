@@ -19,6 +19,8 @@ MAX_SOURCE_ENTRIES=20000
 MAX_SOURCE_DECLARED_BYTES=100_000_000
 MAX_SOURCE_EXPANDED_BYTES=100_000_000
 MAX_SOURCE_METADATA_BYTES=1_000_000
+MAX_SOURCE_PAX_KEYS=128
+MAX_SOURCE_PAX_CHARS=65536
 
 
 def extract_source(stream, destination):
@@ -28,12 +30,25 @@ def extract_source(stream, destination):
     headers=declared=expanded=0
     root=None
 
+    def check_pax(fields):
+        if (len(fields)>MAX_SOURCE_PAX_KEYS
+                or sum(len(key)+len(value) for key,value in fields.items())>MAX_SOURCE_PAX_CHARS):
+            raise ValueError('source effective metadata bound exceeded')
+
     class BoundedTarInfo(tarfile.TarInfo):
+        def _apply_pax_info(self,fields,encoding,errors):
+            # Check local overrides too, before tarfile copies the effective dict.
+            check_pax(fields)
+            return super()._apply_pax_info(fields,encoding,errors)
+
         def _proc_member(self,archive):
             # This hook runs before Python parses PAX/GNU payloads on both
             # supported interpreters (whose frombuf paths differ).
             nonlocal headers
             headers+=1
+            # Global headers update this dict before recursing to the next raw
+            # header. Bound accumulation before any inherited dictionary copy.
+            check_pax(archive.pax_headers)
             metadata={tarfile.XHDTYPE,tarfile.XGLTYPE,tarfile.GNUTYPE_LONGNAME,tarfile.GNUTYPE_LONGLINK}
             if headers>MAX_SOURCE_ENTRIES or self.size<0:
                 raise ValueError('source archive entry bound exceeded')
@@ -63,7 +78,11 @@ def extract_source(stream, destination):
                     raise ValueError('source archive expanded-byte bound exceeded')
                 return value
         with tarfile.open(fileobj=ExpandedReader(),mode='r|',tarinfo=BoundedTarInfo) as archive:
-            for member in archive:
+            while (member:=archive.next()) is not None:
+                # r| still caches TarInfo objects on Python 3.12 and 3.14.
+                # next() avoids iterator cache indexes; discard before every
+                # branch (including repeated root-directory entries).
+                archive.members.clear()
                 declared+=member.size
                 if declared>MAX_SOURCE_DECLARED_BYTES:
                     raise ValueError('source archive declared-size bound exceeded')

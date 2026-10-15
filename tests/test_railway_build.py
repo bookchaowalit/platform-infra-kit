@@ -3,6 +3,7 @@ import importlib
 import io
 import json
 from pathlib import Path
+import sys
 import tarfile
 
 import pytest
@@ -103,3 +104,102 @@ def test_actual_expanded_bytes_include_tar_headers_and_padding(tmp_path,monkeypa
         archive.addfile(item,io.BytesIO(b'x'*3000))
     stream.seek(0)
     with pytest.raises(ValueError): module.extract_source(stream,tmp_path/'source')
+
+
+@pytest.mark.parametrize('kind',['root','directory','file'])
+def test_processed_members_do_not_retain_inherited_metadata(tmp_path,monkeypatch,kind):
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    # A small accepted global dictionary multiplied by many entries must not
+    # remain resident after streaming extraction.
+    fields={f'field{index}':'x'*100 for index in range(100)}
+    with tarfile.open(fileobj=stream,mode='w:gz',pax_headers=fields) as archive:
+        for index in range(200):
+            name='root/' if kind=='root' else f'root/{kind}{index}'
+            item=tarfile.TarInfo(name)
+            if kind!='file': item.type=tarfile.DIRTYPE
+            else: item.size=4
+            archive.addfile(item,io.BytesIO(b'x=1\n'))
+    opened=[]
+    original=tarfile.open
+    def capture(*args,**kwargs):
+        archive=original(*args,**kwargs)
+        opened.append(archive)
+        return archive
+    monkeypatch.setattr(tarfile,'open',capture)
+    peak_members=0
+    original_next=tarfile.TarFile.next
+    def track_next(self):
+        nonlocal peak_members
+        member=original_next(self)
+        peak_members=max(peak_members,len(self.members))
+        return member
+    monkeypatch.setattr(tarfile.TarFile,'next',track_next)
+    stream.seek(0)
+    module.extract_source(stream,tmp_path/'source')
+    retained=sum(sys.getsizeof(member.pax_headers) for member in opened[0].members)
+    assert retained==0, f'{len(opened[0].members)} processed members retained {retained} metadata-dictionary bytes'
+    assert peak_members<=1,'processed members accumulated during extraction'
+    if kind=='directory': assert (tmp_path/'source/directory199').is_dir()
+    if kind=='file': assert (tmp_path/'source/file199').read_bytes()==b'x=1\n'
+
+
+@pytest.mark.parametrize('fields',[
+    {f'unknown{index:05}':'x' for index in range(10000)},
+    {'comment':'x'*65537},
+])
+def test_inherited_metadata_rejected_before_member_copies(tmp_path,monkeypatch,fields):
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    with tarfile.open(fileobj=stream,mode='w:gz',pax_headers=fields) as archive:
+        for _ in range(200):
+            item=tarfile.TarInfo('root/'); item.type=tarfile.DIRTYPE
+            archive.addfile(item)
+    copied=0
+    original=tarfile.TarInfo._apply_pax_info
+    def counted(self,*args,**kwargs):
+        nonlocal copied
+        copied+=1
+        return original(self,*args,**kwargs)
+    monkeypatch.setattr(tarfile.TarInfo,'_apply_pax_info',counted)
+    stream.seek(0)
+    with pytest.raises(ValueError,match='metadata'):
+        module.extract_source(stream,tmp_path/'source')
+    assert copied==0,'oversized inherited metadata was copied into a member'
+
+
+def test_successive_global_headers_cannot_accumulate_unbounded_metadata(tmp_path):
+    import gzip
+    module=importlib.import_module('shared_infra.railway_build')
+    item=tarfile.TarInfo('root/'); item.type=tarfile.DIRTYPE
+    first={f'first{index}':'x' for index in range(80)}
+    second={f'second{index}':'x' for index in range(80)}
+    raw=(tarfile.TarInfo.create_pax_global_header(first)+item.tobuf()
+         +tarfile.TarInfo.create_pax_global_header(second)+item.tobuf()+b'\0'*1024)
+    with pytest.raises(ValueError,match='metadata'):
+        module.extract_source(io.BytesIO(gzip.compress(raw)),tmp_path/'source')
+
+
+def test_local_metadata_cannot_bypass_effective_metadata_bound(tmp_path):
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    with tarfile.open(fileobj=stream,mode='w:gz') as archive:
+        item=tarfile.TarInfo('root/module.py')
+        item.pax_headers={f'unknown{index}':'x' for index in range(200)}
+        archive.addfile(item)
+    stream.seek(0)
+    with pytest.raises(ValueError,match='metadata'):
+        module.extract_source(stream,tmp_path/'source')
+
+
+def test_codeload_global_comment_and_local_long_path_are_preserved(tmp_path):
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    relative='package/'+'long_module_'*12+'.py'
+    with tarfile.open(fileobj=stream,mode='w:gz',pax_headers={'comment':'a'*40}) as archive:
+        item=tarfile.TarInfo('source-'+'a'*40+'/'+relative); item.size=4
+        item.pax_headers={'mtime':'1700000000.123'}
+        archive.addfile(item,io.BytesIO(b'x=1\n'))
+    stream.seek(0)
+    module.extract_source(stream,tmp_path/'source')
+    assert (tmp_path/'source'/relative).read_bytes()==b'x=1\n'
