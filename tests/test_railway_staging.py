@@ -384,3 +384,113 @@ def test_serving_deadline_graceful_drain_is_still_unsuccessful(monkeypatch):
              DATABASE_URL='fixture',JWT_PUBLIC_KEY='fixture')
     monkeypatch.setenv('DATABASE_URL','fixture')
     with pytest.raises(module.StagingDeadline): module.serve(config,env)
+
+
+@pytest.mark.parametrize('tool',['pg_dump','pg_restore'])
+@pytest.mark.parametrize('gap',['constructor','masked_constructor','masked_cleanup'])
+def test_deadline_covers_post_launch_constructor_and_cleanup_gaps(tmp_path,tool,gap):
+    """Widen only after actual launch: never depend on a completed Popen object."""
+    import signal
+    import time
+    from pathlib import Path
+    pid_file=tmp_path/'tool.pid'; heartbeat=tmp_path/'heartbeat'
+    executable=tmp_path/tool
+    executable.write_text('#!'+sys.executable+'\nimport os,time\n'
+        +'open('+repr(str(pid_file))+",'w').write(str(os.getpid()))\n"
+        +'while True:\n open('+repr(str(heartbeat))+",'a').write('tick'); time.sleep(.01)\n")
+    executable.chmod(0o700)
+    constructor="def widened(self,*args,**kwargs):\n original(self,*args,**kwargs)\n if gap=='masked_constructor': signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGALRM})\n time.sleep(30)"
+    cleanup="def widened(self,*args,**kwargs):\n signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGALRM})\n time.sleep(30)\n return original(self,*args,**kwargs)"
+    code=("from shared_infra import railway_staging as r,recovery; from pathlib import Path; import subprocess,signal,sys,time; "
+          "gap=sys.argv[3]; original=getattr(subprocess.Popen,'wait' if gap=='masked_cleanup' else '_execute_child'); "
+          "exec("+repr(cleanup if gap=='masked_cleanup' else constructor)+"); "
+          "setattr(subprocess.Popen,'wait' if gap=='masked_cleanup' else '_execute_child',widened); "
+          "r.Config.dsn=lambda *a,**k:'host=/tmp dbname=fixture user=fixture'; "
+          "r.backup_restore=lambda *a:recovery._command(Path(sys.argv[1]),sys.argv[2],'host=/tmp dbname=fixture user=fixture',[]); "
+          "raise SystemExit(r.main(['backup-restore']))")
+    env=dict(os.environ,**environment(),STAGING_ADMIN_DSN='synthetic-secret')
+    deadline=datetime.now(timezone.utc)+timedelta(seconds=2)
+    env['STAGING_DEADLINE']=deadline.isoformat()
+    sibling=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])
+    process=subprocess.Popen([sys.executable,'-c',code,str(tmp_path),tool,gap],env=env,
+                             stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    child=None
+    try:
+        while datetime.now(timezone.utc)<deadline+timedelta(seconds=.25):
+            time.sleep(.01)
+        if pid_file.exists(): child=int(pid_file.read_text())
+        assert sibling.poll() is None,'unrelated sibling was signalled'
+        assert process.poll() is not None,'CLI passed the original absolute deadline'
+        stdout,stderr=process.communicate(timeout=1)
+        assert child is not None,'stand-in was never actually launched'
+        stat=Path('/proc')/str(child)/'stat'
+        state=stat.read_text().split(') ',1)[1].split()[0] if stat.exists() else None
+        assert state is None,f'post-deadline child remains: {state}'
+        size=heartbeat.stat().st_size; time.sleep(.1)
+        assert heartbeat.stat().st_size==size,'post-deadline tool activity'
+        assert process.returncode==124
+        assert json.loads(stdout.splitlines()[-1])['status']=='deadline-reached'
+        assert not stderr and 'synthetic-secret' not in stdout
+    finally:
+        if process.poll() is None: process.kill(); process.wait()
+        if child is None and pid_file.exists(): child=int(pid_file.read_text())
+        if child:
+            try: os.kill(child,signal.SIGKILL)
+            except ProcessLookupError: pass
+        sibling.terminate(); sibling.wait(timeout=5)
+
+
+@pytest.mark.parametrize('unavailable',['procfs','pidfd'])
+def test_deadline_prerequisites_fail_closed_before_database_or_tool_work(tmp_path,unavailable):
+    marker=tmp_path/'database-was-touched'
+    definition="def guarded_path(value,*args,**kwargs):\n if str(value).startswith('/proc'): raise OSError('synthetic-secret')\n return original_path(value,*args,**kwargs)"
+    code=("from shared_infra import railway_staging as r; from pathlib import Path; import sys; "
+          "original_path=r.Path; exec("+repr(definition)+"); "
+          +("r.Path=guarded_path; " if unavailable=='procfs' else "r.os.pidfd_open=lambda *a:(_ for _ in ()).throw(OSError('synthetic-secret')); ")
+          +"r.Config.dsn=lambda *a,**k:'fixture'; "
+          "r.provision=lambda *a:Path(sys.argv[1]).write_text('unsafe'); "
+          "raise SystemExit(r.main(['bootstrap']))")
+    env=dict(os.environ,**environment(),STAGING_ADMIN_DSN='synthetic-secret',STAGING_ROLE_PASSWORDS='{}')
+    result=subprocess.run([sys.executable,'-c',code,str(marker)],env=env,capture_output=True,text=True,timeout=5)
+    assert not marker.exists(),'database/tool work ran without safe child ownership discovery'
+    assert result.returncode==1
+    assert json.loads(result.stdout)['status']=='failed'
+    assert not result.stderr and 'synthetic-secret' not in result.stdout
+
+
+def test_deadline_preflight_has_no_watchdog_children_or_fd_leaks():
+    import signal
+    import threading
+    from pathlib import Path
+    module=runner()
+    children=module.DirectChildDeadline._direct_children()
+    threads=set(threading.enumerate()); alarm=signal.getitimer(signal.ITIMER_REAL)
+    descriptors=len(list(Path('/proc/self/fd').iterdir()))
+    assert module.DirectChildDeadline.preflight()==children
+    assert module.DirectChildDeadline._direct_children()==children
+    assert set(threading.enumerate())==threads
+    assert signal.getitimer(signal.ITIMER_REAL)==alarm
+    assert len(list(Path('/proc/self/fd').iterdir()))==descriptors
+
+
+def test_deadline_pidfd_ownership_rejects_stale_nonchild_candidates(monkeypatch):
+    from pathlib import Path
+    module=runner()
+    existing=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])
+    guard=None; tool=None
+    try:
+        guard=module.DirectChildDeadline(module.Config.from_env(environment()))
+        tool=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])
+        # Simulate stale procfs numeric candidates: self/parent are not owned
+        # children. waitid(P_PIDFD) must reject them before any signal is sent.
+        parent=os.getppid()
+        monkeypatch.setattr(guard,'_direct_children',lambda:{existing.pid,tool.pid,os.getpid(),parent})
+        guard.reap_started_children()
+        assert existing.poll() is None,'pre-existing child was signalled'
+        assert os.getppid()==parent,'unrelated parent was signalled'
+        assert not (Path('/proc')/str(tool.pid)).exists(),'new tool was not reaped'
+    finally:
+        if tool and tool.poll() is None: tool.kill(); tool.wait()
+        existing.terminate(); existing.wait(timeout=5)
+        if guard:
+            for fd in guard.baseline.values(): os.close(fd)

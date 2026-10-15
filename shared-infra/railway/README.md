@@ -60,14 +60,24 @@ all processes**, starting the clock before the first runtime. The initial test
 window is 20 minutes; deadline must be after now, at most 45 minutes after that same
 start. Do not renew timestamps between modes. The runner bounds HTTP timeouts,
 checks the remaining budget, gracefully stops serving before expiry, and installs
-a two-stage process alarm. One second before expiry, a dedicated BaseException
-unwinds the supported synchronous `subprocess.run` calls, which kill and reap
-pg_dump/pg_restore before the timeout checkpoint. No parent/sibling process groups
-are signalled and container teardown is not relied on for tool cleanup. The final
-hard alarm remains armed at the original deadline through finally/atexit/thread
-shutdown, bounding non-subprocess cleanup hangs. This boundary covers the shipped
-single-process pg_dump and single-transaction pg_restore calls; arbitrary commands
-and daemonizing descendants are not supported. Every Railway service
+a two-stage process alarm plus an independent daemon watchdog thread. Linux
+procfs, pidfd_open/pidfd_send_signal and waitid(P_PIDFD) must pass a side-effect-free
+capability check before any database or tool work; unavailable prerequisites fail
+closed. Hosted CI runs this pure check inside the final image as UID65532 with
+networking disabled, without starting a watchdog or child process.
+
+One second before expiry, the guard kills and reaps newly started direct children
+using kernel pidfds. Kernel wait ownership is checked before signalling; a stale
+procfs numeric PID cannot authorize a signal to a parent/sibling. Pre-existing
+children are pinned and excluded. This does not depend on Popen construction or
+entry into its context manager. BaseException unwinding remains the fast cleanup
+path, while the independent thread enforces the original absolute deadline even
+if main-thread SIGALRM is masked during constructor or cleanup stalls. The final
+hard alarm remains armed through finally/atexit/thread shutdown. No process groups
+are signalled, no process supervisor/subreaper is added and container teardown is
+not relied on for tool cleanup. This boundary covers the shipped single-process
+pg_dump and single-transaction pg_restore calls; arbitrary commands and daemonizing
+descendants are not supported. Every Railway service
 must use deployment `restartPolicyType: NEVER`, including the one-shot operator;
 otherwise PaaS restarts could defeat the intended shutdown. A deadline exits 124 and
 emits `deadline-reached`; it is always an unsuccessful test outcome.

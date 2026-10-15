@@ -85,3 +85,4 @@ jobs:
           docker run --rm --network=none shared-infra:railway python -c 'import sys; assert sys.version_info[:2]==(3,12); import platform_backend_core,platform_workflow,platform_data,platform_developer,platform_security,platform_communication,platform_media,platform_payment,platform_observability,shared_infra.railway_staging'
           docker run --rm --network=none shared-infra:railway /usr/lib/postgresql/16/bin/pg_dump --version | grep -E 'PostgreSQL\) 16\.'
           docker run --rm --network=none shared-infra:railway /usr/lib/postgresql/16/bin/pg_restore --version | grep -E 'PostgreSQL\) 16\.'
+          docker run --rm --network=none shared-infra:railway python -c 'from shared_infra.railway_staging import DirectChildDeadline; DirectChildDeadline.preflight(); print("Linux procfs/pidfd deadline prerequisites passed")'

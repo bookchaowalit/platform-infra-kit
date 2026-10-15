@@ -468,6 +468,119 @@ class StagingDeadline(BaseException):
     """Unwind supported subprocess.run contexts so they kill and reap the tool."""
 
 
+class DirectChildDeadline:
+    """Linux CLI guard independent of Popen construction and main-thread signals.
+
+    Only children owned by this process can be signalled/reaped. Pidfds bind the
+    kernel process identity; procfs candidates alone never authorize a signal.
+    Existing children are pinned and excluded, including across numeric PID reuse.
+    """
+    def __init__(self,config):
+        self.deadline=config.deadline
+        self.expired=threading.Event()
+        self.baseline={}
+        children=self.preflight()
+        for pid in children:
+            fd=self._owned_child(pid)
+            if fd is not None:
+                self.baseline[pid]=fd  # Held through process exit; CLOEXEC pidfds.
+
+    @classmethod
+    def preflight(cls):
+        """Side-effect-free capability check: no watchdog, children or DB work."""
+        children=cls._direct_children()
+        fd=os.pidfd_open(os.getpid())
+        try:
+            if cls._pidfd_pid(fd)!=os.getpid():
+                raise RuntimeError('matching procfs PID namespace required')
+            signal.pidfd_send_signal(fd,0,None,0)
+            try:
+                os.waitid(os.P_PIDFD,fd,os.WEXITED|os.WNOHANG|os.WNOWAIT)
+            except ChildProcessError:
+                pass
+            else:
+                raise RuntimeError('pidfd ownership check unavailable')
+        finally:
+            os.close(fd)
+        return children
+
+    @staticmethod
+    def _direct_children():
+        children=set()
+        tasks=tuple(Path('/proc/self/task').iterdir())
+        read=False
+        for task in tasks:
+            try:
+                value=(task/'children').read_text()
+            except FileNotFoundError:  # A pool thread can finish during enumeration.
+                continue
+            read=True
+            children.update(int(pid) for pid in value.split())
+        if not read:
+            raise RuntimeError('direct-child discovery unavailable')
+        return children
+
+    @staticmethod
+    def _pidfd_pid(fd):
+        fields=dict(line.split(':',1) for line in Path('/proc/self/fdinfo/'+str(fd)).read_text().splitlines() if ':' in line)
+        return int(fields['Pid'])
+
+    @staticmethod
+    def _owned_child(pid):
+        try:
+            fd=os.pidfd_open(pid)
+        except ProcessLookupError:
+            return None
+        try:
+            # A stale/reused procfs PID naming a parent/sibling is not our child.
+            # WNOWAIT verifies ownership without reaping or releasing identity.
+            os.waitid(os.P_PIDFD,fd,os.WEXITED|os.WNOHANG|os.WNOWAIT)
+        except (ChildProcessError,ProcessLookupError):
+            os.close(fd)
+            return None
+        except BaseException:
+            os.close(fd)
+            raise
+        return fd
+
+    def reap_started_children(self):
+        for pid in self._direct_children():
+            baseline=self.baseline.get(pid)
+            if baseline is not None and self._pidfd_pid(baseline)==pid:
+                continue
+            fd=self._owned_child(pid)
+            if fd is None:
+                continue
+            try:
+                signal.pidfd_send_signal(fd,signal.SIGKILL,None,0)
+                os.waitid(os.P_PIDFD,fd,os.WEXITED)
+            except (ChildProcessError,ProcessLookupError):
+                pass  # The other guard thread or normal Popen cleanup won.
+            finally:
+                os.close(fd)
+
+    def start(self,hard_exit):
+        def watch():
+            try:
+                while not self.expired.is_set():
+                    remaining=(self.deadline-datetime.now(timezone.utc)).total_seconds()
+                    if remaining<=1:
+                        break
+                    self.expired.wait(min(.1,remaining-1))
+                self.expired.set()
+                while True:
+                    self.reap_started_children()
+                    remaining=(self.deadline-datetime.now(timezone.utc)).total_seconds()
+                    if remaining<=0:
+                        hard_exit(None,None)
+                    time.sleep(min(.01,remaining))
+            except BaseException:
+                # Never expose constructor/driver/environment diagnostics.
+                print(json.dumps(dict(schema='solo-empire.railway-staging.v1',status='failed',error='deadline_guard_failed')),flush=True)
+                os._exit(1)
+        threading.Thread(target=watch,name='staging-deadline',daemon=True).start()
+
+
 class RedactedParser(argparse.ArgumentParser):
     def error(self,message):
         raise ValueError('invalid command')
@@ -481,12 +594,16 @@ def main(argv=None):
     parser = RedactedParser(description=__doc__)
     parser.add_argument('mode',choices=('bootstrap','probe','seed-restart','verify-restart','backup-restore','verify-restored','serve','worker'))
     config = None
+    deadline_guard=None
     interrupted=False
     try:
         args = parser.parse_args(argv)
         env = os.environ
         config = Config.from_env(env)
+        deadline_guard=DirectChildDeadline(config)
         def hard_deadline(_signum,_frame):
+            deadline_guard.expired.set()
+            deadline_guard.reap_started_children()
             checkpoint(config,dict(status='deadline-reached'))
             os._exit(124)
         def arm_hard_deadline():
@@ -498,12 +615,15 @@ def main(argv=None):
         def interrupt(_signum,_frame):
             nonlocal interrupted
             interrupted=True
+            deadline_guard.expired.set()
             arm_hard_deadline()
+            deadline_guard.reap_started_children()
             raise StagingDeadline()
-        # Leave one second for subprocess.run's BaseException kill/wait path.
-        # The original absolute deadline still bounds finally/atexit hangs.
+        # The pidfd watchdog covers launch/cleanup gaps, including masked alarms.
+        # Normal BaseException unwinding remains a fast path for subprocess.run.
         signal.signal(signal.SIGALRM,interrupt)
         signal.setitimer(signal.ITIMER_REAL,max(.001,config.remaining()-1))
+        deadline_guard.start(hard_deadline)
         if args.mode in {'serve','worker'}:
             if any(name in env for name in ('STAGING_ADMIN_DSN','STAGING_ROLE_PASSWORDS','STAGING_JWT_PRIVATE_KEY')):
                 raise ValueError('operator authority forbidden in runtime')
@@ -533,7 +653,7 @@ def main(argv=None):
                     result = probe.verify_restart(env['STAGING_RESTART_JOB_ID'],env['STAGING_OTHER_JOB_ID'],restored=args.mode=='verify-restored')
             finally:
                 probe.close()
-        if interrupted:
+        if interrupted or deadline_guard.expired.is_set():
             raise StagingDeadline()
         checkpoint(config,result)
         return 0
@@ -541,13 +661,15 @@ def main(argv=None):
         checkpoint(config,dict(status='deadline-reached'))
         return 124
     except Exception:
-        if interrupted:
+        if interrupted or (deadline_guard is not None and deadline_guard.expired.is_set()):
             checkpoint(config,dict(status='deadline-reached'))
             return 124
         # Deliberately fixed error class: driver/HTTP errors can embed DSNs and bodies.
         print(json.dumps(dict(schema='solo-empire.railway-staging.v1',status='failed',error='staging_operation_failed')),flush=True)
         return 1
     finally:
+        if deadline_guard is not None:
+            deadline_guard.reap_started_children()
         if config is not None and 'arm_hard_deadline' in locals():
             # Keep the hard deadline armed through interpreter/thread shutdown.
             arm_hard_deadline()
