@@ -355,6 +355,15 @@ def run_acceptance(admin_dsn, *, pg_bin, operations=24, concurrency=6):
             data={'api_replicas':2,'client_processes':2,'limit':7,'admitted':len(admitted),'overshoot':max(0,len(admitted)-7),'counter_final':counter}
 
             capabilities=_check_capabilities(requests,apis,databases,authority,workspace,other,auth)
+            # Successful requests and conflicts must not poison a reused pool.
+            post_traffic_checks=0
+            for service,replicas in apis.items():
+                for api in replicas:
+                    for _ in range(3):
+                        state=requests.request('readiness.post-traffic.'+service,'GET',api.url+'/readyz').json()
+                        assert state['status']=='ready'
+                        post_traffic_checks+=1
+            post_traffic_readiness={'services':len(apis),'replicas':sum(len(replicas) for replicas in apis.values()),'passes':post_traffic_checks}
             metrics_api=apis['workflow'][0]
             requests.request('telemetry.unauthenticated','GET',metrics_api.url+'/metrics',expected=(401,))
             metrics=requests.request('telemetry.authenticated','GET',metrics_api.url+'/metrics',
@@ -380,6 +389,7 @@ def run_acceptance(admin_dsn, *, pg_bin, operations=24, concurrency=6):
                         assert first['id'] == duplicates[0]['id'] and first['status'] == 'succeeded'
                         assert second['id'] == other_job['id'] and second['status'] == 'queued'
                         requests.request('recovery.isolation','GET',restored_api.url+'/v1/jobs/'+other_job['id'],headers=headers,expected=(404,))
+                        requests.request('recovery.readiness','GET',restored_api.url+'/readyz')
             finally:
                 # Remove only the uniquely generated restore target created by this run.
                 if restored is not None:
@@ -397,7 +407,7 @@ def run_acceptance(admin_dsn, *, pg_bin, operations=24, concurrency=6):
                         'platform-security','platform-communication','platform-media','platform-payment',
                         'platform-observability','fastapi','psycopg','uvicorn')}},'api_processes':9,
                 'runtime_roles_non_bypassrls':7,'external_provider_calls':0,'workflow':workflow,'data':data,
-                'capabilities':capabilities,'telemetry':telemetry,
+                'capabilities':capabilities,'telemetry':telemetry,'post_traffic_readiness':post_traffic_readiness,
                 'recovery':{'fresh_database':True,'restored_workspaces':2,'rows_reopened_over_http':2},
                 'load':{'operations':operations,'concurrency':concurrency},'measurements':summaries,
                 'elapsed_seconds':round(time.monotonic()-started,3),'skipped_checks':[]}

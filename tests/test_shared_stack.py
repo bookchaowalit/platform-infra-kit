@@ -17,6 +17,7 @@ def test_real_multi_process_stack_and_restore(tmp_path):
     assert result['external_provider_calls'] == 0
     assert result['runtime_roles_non_bypassrls'] == 7
     assert result['api_processes'] >= 9
+    assert result['post_traffic_readiness']=={'services':7,'replicas':9,'passes':27}
     assert result['workflow']['workers'] == 2
     assert result['workflow']['distinct_claims'] == 2
     assert result['workflow']['duplicate_jobs'] == 1

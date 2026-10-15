@@ -98,3 +98,12 @@ or oversized limits and admin-authenticated SET ROLE sessions, and holds actual
 connections until PostgreSQL denies an additional login. Source acceptance app
 fixtures use direct service factories and do not pretend those SET ROLE test
 connections prove the production launcher connection ceiling.
+
+After capability traffic, including intentional conflicts and cross-workspace
+reads, acceptance probes every API replica three times (27 post-traffic checks
+across nine replicas). A poisoned reusable pool therefore fails acceptance even
+when startup readiness passed. The restored workflow API is checked again after
+its HTTP reads. Separate owning-store regressions pin the pool to one connection
+and check both core and service readiness after successful requests and errors.
+Media/payment grant regressions also run through the generic launcher with an
+actual capped LOGIN role and injected no-network adapters.

@@ -46,11 +46,11 @@ jobs:
               'backend-core': 'd00e0119c2e47da3942d9c7b4b88828953f8bc5a',
               'workflow': '7d0e6b72370db0e51d1525683d2bdae49e7b93be',
               'data': '2441e9e4175a28c9a67e1ed2eeec2cd897a79a99',
-              'developer': '58340a1715887c25c0aaa667fa1bf8b3de6c2643',
-              'security': 'ea0cb9072a27dc569288ef0c5a44b34fb5dac286',
-              'communication': '14b94cd19da1aff8b7d9e28cff7eb569250ecb11',
-              'media': '75e9f1baedea6d855ba171ac789ee7db3609180a',
-              'payment': 'ca358b08c5756ce3c4287912587c28fbde22aa19',
+              'developer': '00971f7daaa4ed22401ce66a933964595866508f',
+              'security': '89d15f88c73be244e1eea90ca1ea2d875689fcc6',
+              'communication': 'f444d98eec3f57098307b2d9cc1218b0f62843cc',
+              'media': '6276f6a1f287a5cb326e4fe8ad5d8c43c7c45c53',
+              'payment': '0b5799c7c6372e3ffd670dae533ec3c9d388fdd3',
               'observability': 'bdbf9cfcbcad471525854a511c46e8e477d8220f',
           }
           root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'reviewed-source'
