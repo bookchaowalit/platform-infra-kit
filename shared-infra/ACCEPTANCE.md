@@ -17,7 +17,10 @@ Supply these environment variables explicitly in the test process:
   explicit database, user, and an absolute Unix socket directory or literal
   loopback address. The admin needs CREATE DATABASE and CREATE ROLE. Production
   DSNs, hostname discovery, service-file indirection and multi-host lists are
-  rejected by the harness. Never supply production access.
+  rejected by the harness. Every ambient `PG*` variable is rejected before any
+  connection; only `PLATFORM_PG_BIN` supplies the tool directory. Validated DSNs
+  explicitly use `passfile=/dev/null`, including derived fixture connections,
+  so default password-file discovery is disabled. Never supply production access.
 - `PLATFORM_PG_BIN`: directory containing matching `pg_dump` and `pg_restore`.
   An unpacked local PostgreSQL distribution may also need its library directory
   in `LD_LIBRARY_PATH`; this is supplied by the local test environment.
@@ -88,3 +91,10 @@ They do not prove live provider behavior, object durability, cloud networking,
 production issuer cutover, billing lifecycle, regional failover, retention or
 production backup recovery. Those remain separate release gates. A passed run
 has no skipped checks within the declared fixture scope.
+
+The separate generic-launcher HTTP regression uses an actual LOGIN runtime role
+with a provisioned connection limit. It proves valid readiness, rejects unlimited
+or oversized limits and admin-authenticated SET ROLE sessions, and holds actual
+connections until PostgreSQL denies an additional login. Source acceptance app
+fixtures use direct service factories and do not pretend those SET ROLE test
+connections prove the production launcher connection ceiling.

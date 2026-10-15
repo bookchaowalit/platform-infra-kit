@@ -267,7 +267,7 @@ def _check_capabilities(requests,apis,databases,authority,workspace,other,auth):
 
 
 def run_acceptance(admin_dsn, *, pg_bin, operations=24, concurrency=6):
-    validate_local_admin_dsn(admin_dsn)
+    admin_dsn = validate_local_admin_dsn(admin_dsn)
     pg_bin=Path(pg_bin)
     if not all((pg_bin/name).is_file() for name in ('pg_dump','pg_restore')):
         raise ValueError('explicit PostgreSQL client directory required')

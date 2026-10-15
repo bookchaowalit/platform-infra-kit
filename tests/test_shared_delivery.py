@@ -98,6 +98,7 @@ def test_valid_runtime_constructs_instrumented_app_with_configured_deadline(monk
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     pem = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
     for name, value in {'PLATFORM_SERVICE': 'data', 'DATABASE_POOL_MAX': '2', 'REQUEST_TIMEOUT_SECONDS': '7',
+                        'DATABASE_CONNECTION_CEILING': '2',
                         'DATABASE_URL': 'host=/nonexistent-shared-fixture dbname=fixture user=fixture',
                         'JWT_ISSUER': 'synthetic-test', 'JWT_AUDIENCE': 'platform-api', 'JWT_PUBLIC_KEY': pem}.items():
         monkeypatch.setenv(name, value)

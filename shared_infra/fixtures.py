@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import importlib
 import ipaddress
 import multiprocessing
+import os
 import secrets
 import socket
 import time
@@ -14,7 +15,7 @@ import httpx
 import jwt
 import psycopg
 from psycopg import sql
-from psycopg.conninfo import conninfo_to_dict
+from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from platform_backend_core import Database, MigrationRunner, TokenVerifier
@@ -30,6 +31,9 @@ AUDIENCE = 'shared-infrastructure-acceptance'
 
 
 def validate_local_admin_dsn(dsn):
+    # Reject by variable name without inspecting or echoing any ambient values.
+    if any(name.startswith('PG') for name in os.environ):
+        raise ValueError('ambient PostgreSQL settings are forbidden for local fixtures')
     if not isinstance(dsn,str) or not dsn:
         raise ValueError('explicit local fixture admin DSN required')
     fields = conninfo_to_dict(dsn)
@@ -53,7 +57,7 @@ def validate_local_admin_dsn(dsn):
             raise ValueError('only explicit Unix socket or loopback fixture databases are allowed')
     if not fields.get('dbname') or not fields.get('user'):
         raise ValueError('explicit fixture database and admin role required')
-    return dsn
+    return make_conninfo(dsn,passfile=os.devnull)
 
 
 @dataclass
@@ -101,7 +105,7 @@ def grant_runtime(database,service):
 def service_database(admin_dsn,service):
     if service not in SERVICES:
         raise ValueError('unknown fixture service')
-    validate_local_admin_dsn(admin_dsn)
+    admin_dsn = validate_local_admin_dsn(admin_dsn)
     with temporary_database(admin_dsn,prefix='accept_'+service[:8]+'_') as database:
         MigrationRunner(database.admin_dsn,namespace=migration_namespace(service)).apply(service_migrations(service))
         grant_runtime(database,service)

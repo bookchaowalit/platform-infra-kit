@@ -21,7 +21,10 @@ digests, bounded replicas/pools/memory/timeouts and the total API plus worker
 connection allocation. `required_env` lists variable names only. No credential
 values belong in a release file. Each service owns a Dockerfile and staged
 Railway manifest; build and migration commands remain explicit, not API startup
-side effects. Replica counts can increase only within the database allocation.
+side effects. Replica counts can increase only within the database allocation. Generated APIs
+include a mandatory role connection ceiling, and readiness checks the actual
+LOGIN role has a positive PostgreSQL connection limit within that allocation.
+The operator provisions the limit before deployment; the API performs no DDL.
 
 The release plan is an operator artifact with `version: 1`, explicit
 `stage: staged|production`, `database_connection_budget` and a `services` list.
@@ -65,6 +68,8 @@ PLATFORM_PG_BIN=/usr/lib/postgresql/18/bin \
 python -m pytest tests/test_shared_infra.py
 ```
 
+Fixture tests reject every ambient `PG*` setting before connecting and normalize
+DSNs with `passfile=/dev/null`; they do not read default password files.
 Tests create uniquely named databases and nonprivileged runtime roles. They
 exercise real pg_dump/pg_restore, preserve synthetic data through a restore,
 and prove that an existing database or backup is not overwritten. Database

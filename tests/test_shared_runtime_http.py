@@ -1,5 +1,9 @@
 import os
 
+import psycopg
+from psycopg import sql
+from psycopg.conninfo import make_conninfo
+
 from fastapi.testclient import TestClient
 
 from shared_infra.fixtures import Authority, AUDIENCE, ISSUER, service_database
@@ -10,7 +14,11 @@ from uuid import uuid4
 def test_release_launcher_serves_verified_isolated_data_and_authenticated_metrics(monkeypatch):
     authority = Authority.generate()
     with service_database(os.environ['PLATFORM_TEST_DSN'], 'data') as database:
-        for name, value in {'PLATFORM_SERVICE': 'data', 'DATABASE_URL': database.runtime_dsn,
+        with psycopg.connect(database.admin_dsn) as connection:
+            connection.execute(sql.SQL('ALTER ROLE {} LOGIN CONNECTION LIMIT 2').format(sql.Identifier(database.runtime_role)))
+        login_dsn = make_conninfo(database.admin_dsn,user=database.runtime_role,options='')
+        for name, value in {'PLATFORM_SERVICE': 'data', 'DATABASE_URL': login_dsn,
+                            'DATABASE_CONNECTION_CEILING': '2',
                             'DATABASE_POOL_MAX': '2', 'REQUEST_TIMEOUT_SECONDS': '2.5',
                             'JWT_ISSUER': ISSUER, 'JWT_AUDIENCE': AUDIENCE,
                             'JWT_PUBLIC_KEY': authority.public_key,

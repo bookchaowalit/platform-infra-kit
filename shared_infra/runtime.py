@@ -1,6 +1,7 @@
 """Explicit bounded launcher for installed service wheels, without startup DDL."""
 import argparse
 import importlib
+import inspect
 import math
 import os
 from uuid import UUID
@@ -16,6 +17,8 @@ def _service():
 
 
 def _bounded(name, default, minimum, maximum):
+    if default is None and name not in os.environ:
+        raise ValueError('explicit connection ceiling bound required')
     value = int(os.environ.get(name, str(default)))
     if not minimum <= value <= maximum:
         raise ValueError('resource bound outside permitted range')
@@ -27,6 +30,9 @@ def app_factory():
     from platform_observability import instrument
     service = _service()
     maximum = _bounded('DATABASE_POOL_MAX', 8, 1, 64)
+    ceiling = _bounded('DATABASE_CONNECTION_CEILING', None, 1, 4096)
+    if ceiling < maximum:
+        raise ValueError('connection ceiling must cover the configured pool')
     timeout = float(os.environ.get('REQUEST_TIMEOUT_SECONDS', '30'))
     if not math.isfinite(timeout) or not 0 < timeout <= 300:
         raise ValueError('invalid request timeout')
@@ -46,6 +52,33 @@ def app_factory():
                 system = os.environ.get('PLATFORM_SYSTEM_WORKSPACE_ID')
                 kwargs['system_workspace'] = UUID(system) if system else None
             app = module.create_app(database, verifier, **kwargs)
+        def connection_ceiling_ready():
+            # Session identity must be the actual bounded LOGIN role. An admin
+            # session with SET ROLE is not counted against that role's limit.
+            with database.transaction(UUID(int=0)) as conn:
+                row = conn.execute('''SELECT session_user=current_user,rolcanlogin,
+                    rolsuper,rolbypassrls,rolconnlimit FROM pg_catalog.pg_roles
+                    WHERE rolname=current_user''').fetchone()
+                return bool(row and row[0] is True and row[1] is True and row[2] is False
+                            and row[3] is False and 1 <= row[4] <= ceiling)
+        app.state.readiness_checks['database_connection_ceiling'] = connection_ceiling_ready
+        # Some service factories replace core /readyz. Compose the gate around
+        # that route as well, preserving its provider/schema checks.
+        readiness_routes = [route for route in app.router.routes if getattr(route,'path',None) == '/readyz']
+        if (len(readiness_routes) != 1 or inspect.signature(readiness_routes[0].endpoint).parameters
+                or inspect.iscoroutinefunction(readiness_routes[0].endpoint)):
+            raise ValueError('unsupported service readiness boundary')
+        service_readiness = readiness_routes[0].endpoint
+        app.router.routes.remove(readiness_routes[0])
+        @app.get('/readyz',include_in_schema=False)
+        def readiness():
+            from fastapi.responses import JSONResponse
+            try:
+                if connection_ceiling_ready():
+                    return service_readiness()
+            except Exception:
+                pass
+            return JSONResponse({'status':'unavailable'},status_code=503)
         # Core installs the deadline middleware at factory time; set its
         # constructor argument before the ASGI stack is first built.
         guards = 0

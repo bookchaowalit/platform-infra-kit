@@ -22,11 +22,20 @@ def source_revision(path):
     return revision
 
 
+def _wheel_artifacts(bundle):
+    directory = Path(bundle) / 'wheels'
+    if directory.is_symlink() or not directory.is_dir():
+        raise ValueError('regular wheel directory required')
+    artifacts = sorted(directory.iterdir())
+    if not artifacts or any(path.is_symlink() or not path.is_file() or path.suffix != '.whl'
+                            for path in artifacts):
+        raise ValueError('only regular wheel artifacts are allowed')
+    return artifacts
+
+
 def write_wheel_manifest(bundle, *, sources):
     bundle = Path(bundle)
-    wheels = sorted((bundle / 'wheels').glob('*.whl'))
-    if not wheels or any(p.is_symlink() for p in wheels):
-        raise ValueError('regular wheel artifacts required')
+    wheels = _wheel_artifacts(bundle)
     manifest = {'version': 1, 'sources': sources, 'wheels': {
         p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in wheels}}
     with (bundle / 'wheel-manifest.json').open('x') as stream:
@@ -37,17 +46,17 @@ def write_wheel_manifest(bundle, *, sources):
 def verify_wheel_manifest(bundle):
     bundle = Path(bundle)
     try:
-        manifest = json.loads((bundle / 'wheel-manifest.json').read_text())
+        manifest_path = bundle / 'wheel-manifest.json'
+        if manifest_path.is_symlink() or not manifest_path.is_file():
+            return ['regular wheel manifest required']
+        manifest = json.loads(manifest_path.read_text())
         expected = manifest['wheels']
-        actual = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                  for p in (bundle / 'wheels').glob('*.whl') if not p.is_symlink()}
+        actual = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in _wheel_artifacts(bundle)}
         if manifest.get('version') != 1 or not expected or expected != actual:
             return ['wheel artifact set or digest mismatch']
-        if any(p.is_symlink() for p in (bundle / 'wheels').iterdir()):
-            return ['wheel symlink refused']
         return []
     except (OSError, ValueError, KeyError, TypeError):
-        return ['invalid wheel manifest']
+        return ['invalid wheel manifest or non-wheel artifact']
 
 
 def render_kubernetes(plan, *, namespace):
@@ -68,6 +77,7 @@ def render_kubernetes(plan, *, namespace):
                      'ports': [{'name': 'http', 'containerPort': 8080}],
                      'env': [{'name': 'PLATFORM_SERVICE', 'value': name},
                              {'name': 'DATABASE_POOL_MAX', 'value': str(service['pool_max'])},
+                             {'name': 'DATABASE_CONNECTION_CEILING', 'value': str(service.get('max_replicas',service['replicas']) * service['pool_max'])},
                              {'name': 'REQUEST_TIMEOUT_SECONDS', 'value': str(service['request_timeout_seconds'])}],
                      'envFrom': [{'secretRef': {'name': name + '-runtime'}}],
                      'resources': {'requests': {'cpu': '100m', 'memory': str(service['memory_mb']) + 'Mi'},

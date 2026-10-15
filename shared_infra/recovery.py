@@ -18,7 +18,7 @@ def _command(pg_bin: Path, name: str, dsn: str, args: list[str]):
     # PGDATABASE is a database name, not a conninfo string. Populate individual
     # libpq variables explicitly, so the selected host and port are preserved.
     mapping = {'dbname': 'PGDATABASE', 'host': 'PGHOST', 'hostaddr': 'PGHOSTADDR',
-               'port': 'PGPORT', 'user': 'PGUSER', 'password': 'PGPASSWORD',
+               'port': 'PGPORT', 'user': 'PGUSER', 'password': 'PGPASSWORD', 'passfile': 'PGPASSFILE',
                'connect_timeout': 'PGCONNECT_TIMEOUT', 'sslmode': 'PGSSLMODE',
                'sslrootcert': 'PGSSLROOTCERT', 'sslcert': 'PGSSLCERT', 'sslkey': 'PGSSLKEY',
                'sslcrl': 'PGSSLCRL', 'sslcrldir': 'PGSSLCRLDIR',

@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 import yaml
+import psycopg
 
 from .release import validate_plan
 
@@ -69,7 +70,7 @@ def main():
         restore_backup(_dsn(args.dsn_env), args.archive, target_database=args.target, pg_bin=args.pg_bin)
         print(json.dumps({'status': 'restored_into_new_database'}))
         return 0
-    except (ValueError, OSError, RuntimeError, yaml.YAMLError):
+    except (ValueError, OSError, RuntimeError, yaml.YAMLError, psycopg.Error):
         # Do not print connection strings, provider fields or exception payloads.
         print(json.dumps({'status': 'failed', 'error': 'configuration_or_operation_failed'}))
         return 1

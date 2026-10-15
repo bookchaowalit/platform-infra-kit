@@ -14,7 +14,11 @@ checkout paths: `platform-backend-core`, `platform-observability`,
 `platform-payment`. The builder records each exact Git revision, builds the
 service wheels without fetching build dependencies, downloads compatible
 CPython3.12/Linux x86_64 dependency wheels and hashes the entire wheel set.
-It refuses dirty or changing source and an existing output directory.
+It refuses dirty or changing source and an existing output directory. Each
+recorded commit is exported with `git archive` into a fresh private temporary
+directory before building. Ignored `build/`, deleted modules, caches and
+untracked inputs never enter a wheel. Tracked links, submodules and unsafe
+archive entries are rejected; the Dockerfile comes from the same commit export.
 
 ```bash
 python -m shared_infra.bundle --sources /private/source-paths.json --output /private/releases/shared-candidate
@@ -22,7 +26,9 @@ python -m shared_infra verify-bundle /private/releases/shared-candidate
 ```
 
 The bundle Dockerfile installs without network access and checks every wheel
-digest before installation. Supply a reviewed Python3.12-slim base image by its
+digest before installation. The wheel directory must contain exactly the
+manifested regular `.whl` files: directories, links, source archives and other
+entries are refused. Pip additionally uses `--only-binary=:all:`. Supply a reviewed Python3.12-slim base image by its
 actual SHA256 digest. Build on Linux x86_64 with the container engine; the wheel
 bundle intentionally does not include ARM or another Python ABI.
 
@@ -56,7 +62,9 @@ PLATFORM_SERVICE=data python -m shared_infra.runtime migrate
 ```
 
 The migration command reads `DATABASE_MIGRATION_DSN`. Serving processes receive
-only `DATABASE_URL` and runtime settings. Use owning service documentation for
+only `DATABASE_URL` and runtime settings. Authenticate directly as the dedicated
+LOGIN runtime role; an administrator session using `SET ROLE` is refused by
+launcher readiness. Use owning service documentation for
 the exact grants. Namespace names are `workflow`, `data`, `flags` (developer),
 `security`, `communication`, `platform_media`, `platform_payment`. Migration
 history is checksummed; do not edit an applied migration. Readiness verifies
@@ -65,7 +73,8 @@ The security audit table additionally forbids UPDATE/DELETE/TRUNCATE grants.
 
 All seven API runtimes require explicit `PLATFORM_SERVICE`, `DATABASE_URL`,
 `JWT_ISSUER`, `JWT_AUDIENCE`, and `JWT_PUBLIC_KEY` or `JWT_JWKS_URL`. The launcher
-uses bounded pool/statement/request timeouts, port8080, concurrency64, graceful
+uses bounded pool/statement/request timeouts, a mandatory `DATABASE_CONNECTION_CEILING`
+(1–4096, at least the configured pool maximum), port8080, concurrency64, graceful
 shutdown and no access logs or proxy-header authority. Optional `METRICS_TOKEN`
 enables authenticated metrics; `OTEL_TRACES_ENDPOINT` enables HTTPS export.
 Missing provider configuration keeps the relevant API unready.
@@ -96,9 +105,30 @@ Provision each `<service>-runtime` Secret with only approved runtime keys. A
 put migration/admin credentials in that Secret. The generated Deployment uses
 the pinned image, non-root UID10001, read-only filesystem, private Service,
 resource limits, probes, no API service-account token, spread across nodes,
-disruption budget and at most the budgeted HPA count. Rolling updates use no
-surge to keep the connection ceiling. Review namespace network policy against
-the selected private database, DNS, provider egress and monitoring endpoints.
+disruption budget and at most the budgeted HPA count. Rolling updates use zero
+surge, but terminating pods can overlap replacements and retain connections.
+The database role's connection limit enforces the ceiling independently of
+Kubernetes lifecycle; zero surge alone does not enforce it.
+
+Before deployment, the database operator sets the dedicated API LOGIN role's
+limit to the rendered `DATABASE_CONNECTION_CEILING`, which is
+`max_replicas * pool_max` (or fixed `replicas * pool_max`). For example, an
+allocation of 32 requires an explicit operator command such as
+`ALTER ROLE service_api CONNECTION LIMIT 32;` using the migration/admin role.
+Do not execute that DDL at startup. Generic launcher readiness queries the
+actual role and requires `session_user = current_user`, LOGIN capability,
+NOSUPERUSER/NOBYPASSRLS and a positive `rolconnlimit` no greater than the rendered
+ceiling. Unlimited (`-1`), zero or oversized limits fail readiness. Actual
+connections authenticate directly as that role so PostgreSQL counts them;
+privileged sessions using SET ROLE do not satisfy this gate.
+
+Use distinct API roles per service, and separately budgeted roles and limits
+for workers; sharing an API role with unbudgeted consumers spends its allocation.
+Connection exhaustion can keep replacement pods unready until old connections
+close. Test rollout/drain grace and monitor this condition; it preserves the
+allocation without claiming uninterrupted deployment availability. Review
+namespace network policy against the selected private database, DNS, provider
+egress and monitoring endpoints.
 
 Workers use the same immutable image in separately budgeted workspace
 Deployments. `platform-workflow worker` verifies its workspace worker JWT on

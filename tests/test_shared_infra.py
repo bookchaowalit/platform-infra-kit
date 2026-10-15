@@ -60,6 +60,8 @@ def disposable():
     dsn = os.environ.get('PLATFORM_TEST_DSN')
     if not dsn:
         pytest.skip('PLATFORM_TEST_DSN required for real backup/restore drill')
+    from shared_infra.fixtures import validate_local_admin_dsn
+    dsn = validate_local_admin_dsn(dsn)
     with temporary_database(dsn, prefix='infra_test_') as database:
         yield database
 
