@@ -55,3 +55,51 @@ def test_build_rejects_unpinned_infra_source_before_download(tmp_path):
     module=importlib.import_module('shared_infra.railway_build')
     with pytest.raises(ValueError):
         module.build(ROOT/'shared-infra/railway/sources.json','main',tmp_path/'wheels')
+
+
+def test_archive_rejects_at_entry_limit_without_parsing_remaining_headers(tmp_path,monkeypatch):
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    with tarfile.open(fileobj=stream,mode='w:gz') as archive:
+        for index in range(40000): archive.addfile(tarfile.TarInfo('root/file'+str(index)))
+    parsed=0
+    original=tarfile.TarInfo._proc_member
+    def counted(self,*args,**kwargs):
+        nonlocal parsed
+        parsed+=1
+        return original(self,*args,**kwargs)
+    monkeypatch.setattr(tarfile.TarInfo,'_proc_member',counted)
+    stream.seek(0)
+    with pytest.raises(ValueError): module.extract_source(stream,tmp_path/'source')
+    assert parsed<=20001,'headers after the entry limit were still parsed'
+
+
+@pytest.mark.parametrize('kind',[tarfile.XHDTYPE,tarfile.GNUTYPE_LONGNAME])
+def test_oversized_extended_header_rejected_before_payload_inflation(tmp_path,monkeypatch,kind):
+    import gzip
+    module=importlib.import_module('shared_infra.railway_build')
+    stream=io.BytesIO()
+    with tarfile.open(fileobj=stream,mode='w:gz') as archive:
+        item=tarfile.TarInfo('root/metadata'); item.type=kind; item.size=2000000
+        archive.addfile(item,io.BytesIO(b'x'*item.size))
+    expanded=0
+    original=gzip.GzipFile.read
+    def counted(self,*args,**kwargs):
+        nonlocal expanded
+        value=original(self,*args,**kwargs); expanded+=len(value); return value
+    monkeypatch.setattr(gzip.GzipFile,'read',counted)
+    stream.seek(0)
+    with pytest.raises((ValueError,tarfile.TarError)):
+        module.extract_source(stream,tmp_path/'source')
+    assert expanded<=65536,'extended header inflated before size rejection'
+
+
+def test_actual_expanded_bytes_include_tar_headers_and_padding(tmp_path,monkeypatch):
+    module=importlib.import_module('shared_infra.railway_build')
+    monkeypatch.setattr(module,'MAX_SOURCE_EXPANDED_BYTES',4096,raising=False)
+    stream=io.BytesIO()
+    with tarfile.open(fileobj=stream,mode='w:gz') as archive:
+        item=tarfile.TarInfo('root/payload'); item.size=3000
+        archive.addfile(item,io.BytesIO(b'x'*3000))
+    stream.seek(0)
+    with pytest.raises(ValueError): module.extract_source(stream,tmp_path/'source')

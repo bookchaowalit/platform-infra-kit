@@ -1,6 +1,7 @@
 """Public hosted builder: exact GitHub source archives, hash-locked binary dependencies."""
 import argparse
 import hashlib
+import gzip
 import io
 import json
 import os
@@ -14,36 +15,81 @@ import tempfile
 import urllib.request
 
 
+MAX_SOURCE_ENTRIES=20000
+MAX_SOURCE_DECLARED_BYTES=100_000_000
+MAX_SOURCE_EXPANDED_BYTES=100_000_000
+MAX_SOURCE_METADATA_BYTES=1_000_000
+
+
 def extract_source(stream, destination):
+    """Bound gzip expansion and tar parsing before accepting each source entry."""
     destination=Path(destination)
     destination.mkdir(mode=0o700,parents=True,exist_ok=False)
-    with tarfile.open(fileobj=stream,mode='r:gz') as archive:
-        members=archive.getmembers()
-        roots=set()
-        if len(members)>20000 or sum(member.size for member in members)>100_000_000:
-            raise ValueError('source archive bound exceeded')
-        for member in members:
-            path=PurePosixPath(member.name)
-            if (path.is_absolute() or '..' in path.parts or '\\' in member.name or not path.parts
-                    or '.gitmodules' in path.parts or '.git' in path.parts
-                    or not (member.isfile() or member.isdir())):
-                raise ValueError('unsupported source archive entry')
-            roots.add(path.parts[0])
-        if len(roots)!=1:
-            raise ValueError('single source archive root required')
-        for member in members:
-            path=PurePosixPath(member.name)
-            if len(path.parts)==1:
-                if not member.isdir(): raise ValueError('source root must be a directory')
-                continue
-            target=destination.joinpath(*path.parts[1:])
-            if member.isdir():
-                target.mkdir(mode=0o700,parents=True,exist_ok=True)
-            else:
-                target.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
-                with archive.extractfile(member) as source,target.open('xb') as output:
-                    shutil.copyfileobj(source,output)
-                target.chmod(0o700 if member.mode & 0o111 else 0o600)
+    headers=declared=expanded=0
+    root=None
+
+    class BoundedTarInfo(tarfile.TarInfo):
+        def _proc_member(self,archive):
+            # This hook runs before Python parses PAX/GNU payloads on both
+            # supported interpreters (whose frombuf paths differ).
+            nonlocal headers
+            headers+=1
+            metadata={tarfile.XHDTYPE,tarfile.XGLTYPE,tarfile.GNUTYPE_LONGNAME,tarfile.GNUTYPE_LONGLINK}
+            if headers>MAX_SOURCE_ENTRIES or self.size<0:
+                raise ValueError('source archive entry bound exceeded')
+            if self.type not in metadata|{tarfile.REGTYPE,tarfile.AREGTYPE,tarfile.DIRTYPE}:
+                raise ValueError('unsupported source header type')
+            if self.type in metadata:
+                if self.size>MAX_SOURCE_METADATA_BYTES:
+                    raise ValueError('source extended header bound exceeded')
+                depth=getattr(archive,'_bounded_metadata_depth',0)
+                if depth>=32:
+                    raise ValueError('source extended header nesting bound exceeded')
+                archive._bounded_metadata_depth=depth+1
+                try:
+                    return super()._proc_member(archive)
+                finally:
+                    archive._bounded_metadata_depth=depth
+            return super()._proc_member(archive)
+
+    with gzip.GzipFile(fileobj=stream,mode='rb') as compressed:
+        class ExpandedReader:
+            def read(self,size=-1):
+                nonlocal expanded
+                allowance=MAX_SOURCE_EXPANDED_BYTES-expanded+1
+                value=compressed.read(min(size,allowance) if size>=0 else allowance)
+                expanded+=len(value)
+                if expanded>MAX_SOURCE_EXPANDED_BYTES:
+                    raise ValueError('source archive expanded-byte bound exceeded')
+                return value
+        with tarfile.open(fileobj=ExpandedReader(),mode='r|',tarinfo=BoundedTarInfo) as archive:
+            for member in archive:
+                declared+=member.size
+                if declared>MAX_SOURCE_DECLARED_BYTES:
+                    raise ValueError('source archive declared-size bound exceeded')
+                path=PurePosixPath(member.name)
+                if (path.is_absolute() or '..' in path.parts or '\\' in member.name or not path.parts
+                        or '.gitmodules' in path.parts or '.git' in path.parts
+                        or member.sparse is not None or not (member.isfile() or member.isdir())):
+                    raise ValueError('unsupported source archive entry')
+                if root is None:
+                    root=path.parts[0]
+                elif root!=path.parts[0]:
+                    raise ValueError('single source archive root required')
+                if len(path.parts)==1:
+                    if not member.isdir():
+                        raise ValueError('source root must be a directory')
+                    continue
+                target=destination.joinpath(*path.parts[1:])
+                if member.isdir():
+                    target.mkdir(mode=0o700,parents=True,exist_ok=True)
+                else:
+                    target.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+                    with archive.extractfile(member) as source,target.open('xb') as output:
+                        shutil.copyfileobj(source,output)
+                    target.chmod(0o700 if member.mode & 0o111 else 0o600)
+    if root is None:
+        raise ValueError('source archive is empty')
 
 
 def requirements(wheels):

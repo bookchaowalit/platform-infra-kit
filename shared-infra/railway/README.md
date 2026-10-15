@@ -28,6 +28,11 @@ version, filename and SHA256, plus pinned setuptools/wheel build tools.
 
 All source is fetched from exact public GitHub commit archives into fresh private
 folders; archive links, traversal, `.gitmodules` and special files are rejected.
+Streaming extraction caps raw headers at 20,000, declared file bytes and actual
+gzip-expanded bytes (including tar headers/padding) at 100 MB, extended metadata
+headers at 1 MB and metadata nesting at 32. Limits apply before PAX/GNU payload
+parsing and during decompression; the builder never parses the complete archive
+into an unbounded member list.
 No local ignored `build/lib`, editable checkout or untracked source enters wheels.
 Builds fix SOURCE_DATE_EPOCH to1980-01-01 and disable ambient pip configuration/cache.
 The final image installs the exact regular wheel set offline with
@@ -55,10 +60,17 @@ all processes**, starting the clock before the first runtime. The initial test
 window is 20 minutes; deadline must be after now, at most 45 minutes after that same
 start. Do not renew timestamps between modes. The runner bounds HTTP timeouts,
 checks the remaining budget, gracefully stops serving before expiry, and installs
-a hard process alarm even for blocked worker/backup calls. Every Railway service
+a two-stage process alarm. One second before expiry, a dedicated BaseException
+unwinds the supported synchronous `subprocess.run` calls, which kill and reap
+pg_dump/pg_restore before the timeout checkpoint. No parent/sibling process groups
+are signalled and container teardown is not relied on for tool cleanup. The final
+hard alarm remains armed at the original deadline through finally/atexit/thread
+shutdown, bounding non-subprocess cleanup hangs. This boundary covers the shipped
+single-process pg_dump and single-transaction pg_restore calls; arbitrary commands
+and daemonizing descendants are not supported. Every Railway service
 must use deployment `restartPolicyType: NEVER`, including the one-shot operator;
-otherwise PaaS restarts could defeat the intended shutdown. A deadline exits 0 and
-emits `deadline-reached`; it is not evidence that an incomplete test passed.
+otherwise PaaS restarts could defeat the intended shutdown. A deadline exits 124 and
+emits `deadline-reached`; it is always an unsuccessful test outcome.
 
 Optional `STAGING_API_URLS` JSON must equal the four fixed URLs exactly. Each
 command is `python -m shared_infra.railway_staging <mode>`, set directly as
@@ -126,7 +138,11 @@ Names are deterministic, using the 32 hex UUID digits:
    dedicated synthetic queue and proves stale acknowledgment409 plus idempotent
    successful completion. It drains jobs, concurrently increments shared state,
    admits exactly 7 reservations out of 32, exercises flags/audit idempotency and
-   tenant isolation, then performs 12 post-traffic readiness checks. JSON includes
+   tenant isolation, then performs 12 post-traffic readiness checks. Quota preflight
+   samples database time through a dedicated counter timestamp and selects a
+   supported epoch-aligned period that cannot change before the shared deadline
+   (with transit margin), so hour/day/year boundaries cannot create a second
+   legitimate bucket during the cap 7 measurement. JSON includes
    measured count/errors/p50/p95/throughput, scoped only to this staging run.
 6. `seed-restart` emits `restart_job` and `other_workspace_job`; copy those synthetic
    IDs into `STAGING_RESTART_JOB_ID` and `STAGING_OTHER_JOB_ID` on the HTTP-only

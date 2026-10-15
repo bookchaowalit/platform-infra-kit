@@ -240,7 +240,7 @@ def test_shared_deadline_terminates_blocked_operator_without_secret_output():
     code="from shared_infra import railway_staging as r; import time; r.Probe=lambda *a: None; r.provision=lambda *a: time.sleep(30); r.Config.dsn=lambda *a,**k: 'redacted'; raise SystemExit(r.main(['bootstrap']))"
     env['STAGING_ADMIN_DSN']='synthetic-secret'; env['STAGING_ROLE_PASSWORDS']='{}'
     result=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,text=True,timeout=5)
-    assert result.returncode==0
+    assert result.returncode==124
     assert json.loads(result.stdout)['status']=='deadline-reached'
     assert 'synthetic-secret' not in result.stdout+result.stderr
 
@@ -264,3 +264,123 @@ def test_unknown_cli_argument_is_redacted():
     assert result.returncode==1
     assert json.loads(result.stdout)['status']=='failed'
     assert 'synthetic-secret' not in result.stdout+result.stderr
+
+
+@pytest.mark.parametrize('tool,new_session',[('pg_dump',False),('pg_restore',True)])
+def test_deadline_kills_and_reaps_supported_backup_child_without_signalling_sibling(tmp_path,tool,new_session):
+    """The production recovery subprocess.run path must finish child cleanup first."""
+    import time
+    pid_file=tmp_path/'child.pid'
+    heartbeat=tmp_path/'heartbeat'
+    executable=tmp_path/tool
+    executable.write_text('#!'+sys.executable+'\nimport os,time\n'
+        +'open('+repr(str(pid_file))+",'w').write(str(os.getpid()))\n"
+        +'while True:\n open('+repr(str(heartbeat))+",'a').write('tick'); time.sleep(.02)\n")
+    executable.chmod(0o700)
+    code=("from shared_infra import railway_staging as r,recovery; from pathlib import Path; import sys; "
+          "r.Config.dsn=lambda *a,**k:'host=/tmp dbname=fixture user=fixture'; "
+          "r.backup_restore=lambda *a:recovery._command(Path(sys.argv[1]),sys.argv[2],'host=/tmp dbname=fixture user=fixture',[]); "
+          "raise SystemExit(r.main(['backup-restore']))")
+    env=dict(os.environ,**environment(),STAGING_ADMIN_DSN='synthetic-secret')
+    env['STAGING_DEADLINE']=(datetime.now(timezone.utc)+timedelta(seconds=2)).isoformat()
+    sibling=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])
+    process=subprocess.Popen([sys.executable,'-c',code,str(tmp_path),tool],env=env,
+                             stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=new_session)
+    child=None
+    try:
+        stdout,stderr=process.communicate(timeout=5)
+        child=int(pid_file.read_text())
+        assert sibling.poll() is None,'unrelated sibling was signalled'
+        path=__import__('pathlib').Path('/proc')/str(child)/'stat'
+        state=path.read_text().split(') ',1)[1].split()[0] if path.exists() else None
+        assert state is None,f'backup child not reaped: {state}'
+        size=heartbeat.stat().st_size; time.sleep(.1)
+        assert heartbeat.stat().st_size==size,'post-deadline backup activity'
+        assert process.returncode==124,'deadline must not count as success'
+        assert json.loads(stdout.splitlines()[-1])['status']=='deadline-reached'
+        assert 'synthetic-secret' not in stdout+stderr and not stderr
+    finally:
+        if process.poll() is None: process.kill(); process.wait()
+        if child is None and pid_file.exists(): child=int(pid_file.read_text())
+        if child:
+            try: os.kill(child,__import__('signal').SIGKILL)
+            except ProcessLookupError: pass
+        sibling.terminate(); sibling.wait(timeout=5)
+
+
+def test_deadline_hard_stop_bounds_non_subprocess_cleanup_hang():
+    import time
+    env=dict(os.environ,**environment(),STAGING_ADMIN_DSN='synthetic-secret',STAGING_ROLE_PASSWORDS='{}')
+    deadline=datetime.now(timezone.utc)+timedelta(seconds=2)
+    env['STAGING_DEADLINE']=deadline.isoformat()
+    code=("from shared_infra import railway_staging as r; import time; "
+          "r.Config.dsn=lambda *a,**k:'synthetic'; "
+          "exec("+repr("def blocked(*args):\n try: time.sleep(30)\n finally:\n  while True: time.sleep(30)")+"); "
+          "r.provision=blocked; raise SystemExit(r.main(['bootstrap']))")
+    result=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,text=True,timeout=5)
+    assert result.returncode==124
+    assert datetime.now(timezone.utc)<deadline+timedelta(seconds=.5)
+    assert json.loads(result.stdout.splitlines()[-1])['status']=='deadline-reached'
+    assert 'synthetic-secret' not in result.stdout+result.stderr and not result.stderr
+
+
+@pytest.mark.parametrize('moment',[
+    '2026-10-15T12:59:59+00:00','2026-10-15T23:59:59+00:00',
+    '2026-12-31T23:59:59+00:00','2027-12-17T23:59:59+00:00',
+    datetime.fromtimestamp(58*31536000-1,timezone.utc).isoformat()])
+def test_quota_period_covers_entire_shared_deadline_at_boundaries(moment):
+    module=runner()
+    now=datetime.fromisoformat(moment); deadline=now+timedelta(minutes=45)
+    window=module.quota_window(now,deadline)
+    assert 1<=window<=31536000
+    assert int((now-timedelta(seconds=10)).timestamp())//window==int((deadline+timedelta(seconds=10)).timestamp())//window
+
+
+def test_cli_worker_sigterm_still_exits_gracefully_before_deadline(tmp_path):
+    import signal
+    import time
+    ready=tmp_path/'ready'
+    definition="def wait_worker(config,dsn,stop,*args):\n open(sys.argv[1],'w').write('ready')\n while not stop.wait(.01): pass"
+    code=("from shared_infra import railway_staging as r; import sys; "
+          "r.Config.dsn=lambda *a,**k:'fixture'; r.authority=lambda *a:None; "
+          "exec("+repr(definition)+"); r.worker=wait_worker; raise SystemExit(r.main(['worker']))")
+    env=dict(os.environ,**environment(),DATABASE_URL='synthetic-secret',WORKFLOW_WORKER_AUTHORIZATION='{}')
+    process=subprocess.Popen([sys.executable,'-c',code,str(ready)],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    try:
+        end=time.monotonic()+5
+        while not ready.exists():
+            assert process.poll() is None and time.monotonic()<end
+            time.sleep(.01)
+        process.send_signal(signal.SIGTERM)
+        stdout,stderr=process.communicate(timeout=3)
+        assert process.returncode==0
+        assert json.loads(stdout)['status']=='stopped'
+        assert not stderr and 'synthetic-secret' not in stdout
+    finally:
+        if process.poll() is None: process.kill(); process.wait()
+
+
+def test_serving_deadline_graceful_drain_is_still_unsuccessful(monkeypatch):
+    from dataclasses import replace
+    import time
+    import uvicorn
+    from shared_infra import runtime
+    module=runner()
+    config=module.Config.from_env(environment())
+    config=replace(config,deadline=datetime.now(timezone.utc)+timedelta(seconds=2))
+    class FakeServer:
+        should_exit=False
+        def __init__(self,*args,**kwargs): pass
+        def run(self,**kwargs):
+            while not self.should_exit: time.sleep(.001)
+    class Listener:
+        def close(self): pass
+    monkeypatch.setattr(uvicorn,'Server',FakeServer)
+    monkeypatch.setattr(module.Config,'dsn',lambda *a,**k:'fixture')
+    monkeypatch.setattr(module,'authority',lambda *a:None)
+    monkeypatch.setattr(module,'dual_stack_listener',lambda *a:Listener())
+    monkeypatch.setattr(runtime,'app_factory',lambda:object())
+    env=dict(PLATFORM_SERVICE='workflow',DATABASE_POOL_MAX='2',DATABASE_CONNECTION_CEILING='4',
+             DATABASE_URL='fixture',JWT_PUBLIC_KEY='fixture')
+    monkeypatch.setenv('DATABASE_URL','fixture')
+    with pytest.raises(module.StagingDeadline): module.serve(config,env)
