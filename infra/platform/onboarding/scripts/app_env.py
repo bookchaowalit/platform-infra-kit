@@ -44,9 +44,7 @@ def main() -> int:
         "APP_IMAGE_NAME": str(spec.get("image_name", f"solo-empire/{name}")),
         "APP_DATA_CONTRACT": str(spec.get("data_contract", "")),
         "APP_TARGET_PORT": str(spec.get("target_port", 8080)),
-        "APP_INGRESS_HOSTNAME": str(
-            spec.get("ingress_hostname", f"{name}.dev.local")
-        ),
+        "APP_INGRESS_HOSTNAME": str(spec.get("ingress_hostname", f"{name}.dev.local")),
         "APP_NS": f"apps-{name}-dev",
         "APP_ARGO": f"{name}-dev",
         "APP_RUNBOOK": str(spec.get("runbook", "")),

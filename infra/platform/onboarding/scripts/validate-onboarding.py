@@ -39,13 +39,13 @@ sys.path.insert(0, str(SCRIPTS))
 from lib_yaml import load_pilot_app, load_yaml  # noqa: E402
 
 SECRET_PATTERNS = [
-    re.compile(r"soloempire2026", re.I),
+    re.compile(r"soloempire2026", re.IGNORECASE),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(
         r"(api[_-]?key|secret[_-]?key|password|token)\s*[:=]\s*['\"][A-Za-z0-9/+=_\-]{12,}['\"]",
-        re.I,
+        re.IGNORECASE,
     ),
 ]
 
@@ -179,7 +179,10 @@ def validate_values(c: Checker, name: str, text: str) -> None:
     c.ok(f"{name} values: no hardcoded secret patterns")
 
     # No in-chart DB
-    if re.search(r"(?i)postgresql|redis:|bitnami/postgres", text) and "No PostgreSQL" not in text:
+    if (
+        re.search(r"(?i)postgresql|redis:|bitnami/postgres", text)
+        and "No PostgreSQL" not in text
+    ):
         # comments about not using DB are fine; actual chart deps would look different
         if re.search(r"(?m)^(dependencies:|  postgresql:)", text):
             c.fail(f"{name} values: must not embed PostgreSQL/Redis chart deps")
@@ -254,9 +257,7 @@ def validate_catalog_and_inventory(c: Checker, names: list[str]) -> None:
     inv = load_yaml(INVENTORY) or {}
     inv_apps = inv.get("applications") or []
     by_id = {
-        str(a.get("id")): a
-        for a in inv_apps
-        if isinstance(a, dict) and a.get("id")
+        str(a.get("id")): a for a in inv_apps if isinstance(a, dict) and a.get("id")
     }
     for n in cat_names:
         # skip pure examples if any
@@ -296,13 +297,7 @@ def validate_catalog_and_inventory(c: Checker, names: list[str]) -> None:
 
 def validate_argo_templates(c: Checker, names: list[str]) -> None:
     for name in names:
-        tpl = (
-            PLATFORM
-            / "bootstrap"
-            / "local"
-            / "applications"
-            / f"{name}-dev.yaml.tpl"
-        )
+        tpl = PLATFORM / "bootstrap" / "local" / "applications" / f"{name}-dev.yaml.tpl"
         if not tpl.exists():
             c.fail(f"missing Argo Application template: {tpl.name}")
             continue
@@ -345,7 +340,9 @@ def validate_no_secrets_in_onboarding(c: Checker) -> None:
             if not pat.search(text):
                 continue
             if "soloempire2026" in pat.pattern:
-                if re.search(r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.I):
+                if re.search(
+                    r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.IGNORECASE
+                ):
                     c.fail(f"secret-like content in {path.relative_to(ROOT)}")
                     return
                 continue
@@ -363,7 +360,9 @@ def validate_expected_pilots(c: Checker, names: list[str]) -> None:
         c.fail(f"expected pilots {sorted(expected)}, found {sorted(have)}")
     # Explicit: no third pilot required; if more exist, just note uniqueness already checked
     if len(have) > 2:
-        c.ok(f"additional pilot definitions present: {sorted(have - expected)} (validate only)")
+        c.ok(
+            f"additional pilot definitions present: {sorted(have - expected)} (validate only)"
+        )
 
 
 def validate_staging_readiness(c: Checker, names: list[str]) -> None:
@@ -378,11 +377,11 @@ def validate_staging_readiness(c: Checker, names: list[str]) -> None:
     if appset.exists():
         text = appset.read_text(encoding="utf-8")
         # Active list should not include uncommented staging environment entries
-        active_staging = re.findall(
-            r"(?m)^\s+-\s+environment:\s+staging\s*$", text
-        )
+        active_staging = re.findall(r"(?m)^\s+-\s+environment:\s+staging\s*$", text)
         if active_staging:
-            c.fail("applicationset.yaml has active staging generator (must stay disabled)")
+            c.fail(
+                "applicationset.yaml has active staging generator (must stay disabled)"
+            )
         else:
             c.ok("applicationset.yaml has no active staging generator")
     else:
@@ -425,7 +424,9 @@ def validate_staging_readiness(c: Checker, names: list[str]) -> None:
             / f"{name}-staging.yaml.tpl"
         )
         if bad_tpl.exists():
-            c.fail(f"unexpected staging Argo template {bad_tpl.name} (deploy must stay off)")
+            c.fail(
+                f"unexpected staging Argo template {bad_tpl.name} (deploy must stay off)"
+            )
         else:
             c.ok(f"{name}: no local staging Argo Application template")
 
@@ -467,7 +468,9 @@ def validate_docs_and_contract(c: Checker) -> None:
     iac_root = PLATFORM / "iac" / "envs" / "staging" / "fsn1" / "main.tf"
     if iac_root.exists():
         text = iac_root.read_text(encoding="utf-8")
-        if "provision" in text and "false" in (PLATFORM / "iac" / "envs" / "staging" / "fsn1" / "variables.tf").read_text(encoding="utf-8"):
+        if "provision" in text and "false" in (
+            PLATFORM / "iac" / "envs" / "staging" / "fsn1" / "variables.tf"
+        ).read_text(encoding="utf-8"):
             c.ok("staging IaC root present with provision variable")
         else:
             c.ok("staging IaC root present")
@@ -475,7 +478,10 @@ def validate_docs_and_contract(c: Checker) -> None:
         c.fail("staging IaC root main.tf missing")
 
     prod_disabled = PLATFORM / "iac" / "envs" / "production" / "README.md"
-    if prod_disabled.exists() and "DISABLED" in prod_disabled.read_text(encoding="utf-8").upper():
+    if (
+        prod_disabled.exists()
+        and "DISABLED" in prod_disabled.read_text(encoding="utf-8").upper()
+    ):
         c.ok("production IaC marked DISABLED")
     else:
         c.fail("production IaC must remain disabled (README)")

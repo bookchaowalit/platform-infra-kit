@@ -26,7 +26,9 @@ sys.path.insert(0, str(SCRIPTS))
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]{1,48}$")
 
 
-def render(template: str, mapping: dict[str, str], *, allow_remaining: bool = False) -> str:
+def render(
+    template: str, mapping: dict[str, str], *, allow_remaining: bool = False
+) -> str:
     out = template
     for k, v in mapping.items():
         out = out.replace(f"__{k}__", v)
@@ -112,12 +114,12 @@ spec:
   region: local
   cluster: k3d-solo-dev
   source_path: {args.source_path}
-  dockerfile: {args.dockerfile or (args.source_path.rstrip('/') + '/Dockerfile')}
-  image_name: {args.image_name or f'solo-empire/{name}'}
+  dockerfile: {args.dockerfile or (args.source_path.rstrip("/") + "/Dockerfile")}
+  image_name: {args.image_name or f"solo-empire/{name}"}
   data_contract: {args.data_contract}
   target_port: {args.target_port}
-  run_as_user: {args.run_as_user or 'null'}
-  ingress_hostname: {args.ingress_hostname or f'{name}.dev.local'}
+  run_as_user: {args.run_as_user or "null"}
+  ingress_hostname: {args.ingress_hostname or f"{name}.dev.local"}
   probes:
     liveness: {args.liveness}
     readiness: {args.readiness}
@@ -134,13 +136,12 @@ spec:
     minReplicas: 1
     maxReplicas: 2
     targetCPUUtilizationPercentage: 80
-  runbook: operations/{name.upper().replace('-', '_')}-PILOT-RUNBOOK.md
+  runbook: operations/{name.upper().replace("-", "_")}-PILOT-RUNBOOK.md
   values_customized: false
 """
     # Fix run_as_user null representation and runbook path convention
     if not args.run_as_user:
         content = content.replace("  run_as_user: null\n", "")
-    runbook_name = name.upper().replace("-", "-")
     # Prefer NAME with hyphens uppercased poorly; use stable slug style
     runbook_rel = f"operations/{name.upper()}-PILOT-RUNBOOK.md"
     # booknbook style is BOOKNBOOK; ai-doc is AI-DOC-ASSISTANT
@@ -165,7 +166,9 @@ spec:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Scaffold a pilot app (no deploy)")
     parser.add_argument("--name", required=True, help="App slug (lowercase, hyphens)")
-    parser.add_argument("--source-path", default="", help="Path to app source from repo root")
+    parser.add_argument(
+        "--source-path", default="", help="Path to app source from repo root"
+    )
     parser.add_argument("--dockerfile", default="", help="Dockerfile path (optional)")
     parser.add_argument("--team", default="product")
     parser.add_argument("--component", default="web")
@@ -183,7 +186,9 @@ def main() -> int:
     parser.add_argument("--cpu-limit", default="1")
     parser.add_argument("--memory-limit", default="1Gi")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--force", action="store_true", help="Overwrite existing scaffold files")
+    parser.add_argument(
+        "--force", action="store_true", help="Overwrite existing scaffold files"
+    )
     parser.add_argument(
         "--from-definition",
         action="store_true",
@@ -193,7 +198,10 @@ def main() -> int:
 
     name = args.name.strip()
     if not NAME_RE.match(name):
-        print(f"ERROR: invalid app name {name!r} (use lowercase + hyphens)", file=sys.stderr)
+        print(
+            f"ERROR: invalid app name {name!r} (use lowercase + hyphens)",
+            file=sys.stderr,
+        )
         return 1
 
     # Known pilots: allow --from-definition without re-creating definition
@@ -228,13 +236,18 @@ def main() -> int:
         run_as = spec.get("run_as_user")
         run_as_s = str(run_as) if run_as not in (None, "", "null") else ""
         values_customized = bool(spec.get("values_customized"))
-        runbook = str(spec.get("runbook", f"operations/{name.upper()}-PILOT-RUNBOOK.md"))
+        runbook = str(
+            spec.get("runbook", f"operations/{name.upper()}-PILOT-RUNBOOK.md")
+        )
     else:
         if not args.source_path:
             print("ERROR: --source-path required for new apps", file=sys.stderr)
             return 1
         if not args.data_contract:
-            print("ERROR: --data-contract is required (explicit data contract)", file=sys.stderr)
+            print(
+                "ERROR: --data-contract is required (explicit data contract)",
+                file=sys.stderr,
+            )
             return 1
         write_definition(name, args, dry_run=args.dry_run, force=args.force)
         source_path = args.source_path
@@ -279,7 +292,9 @@ def main() -> int:
     actions: list[str] = []
 
     # Dev values
-    values_path = PLATFORM / "gitops" / "applications" / "values" / "dev" / f"{name}.yaml"
+    values_path = (
+        PLATFORM / "gitops" / "applications" / "values" / "dev" / f"{name}.yaml"
+    )
     if values_customized and values_path.exists() and not args.force:
         actions.append(f"skip (values_customized): {values_path.relative_to(ROOT)}")
     else:
@@ -295,11 +310,7 @@ def main() -> int:
 
     # Argo Application template (local bootstrap)
     argo_tpl_path = (
-        PLATFORM
-        / "bootstrap"
-        / "local"
-        / "applications"
-        / f"{name}-dev.yaml.tpl"
+        PLATFORM / "bootstrap" / "local" / "applications" / f"{name}-dev.yaml.tpl"
     )
     argo_tpl = (TEMPLATES / "argo-application.yaml.tpl").read_text(encoding="utf-8")
     # Bind app identity only; leave __ARGOCD_* / __IMAGE_* for deploy-time render
@@ -344,7 +355,7 @@ def main() -> int:
         print(f"  {a}")
     print("\nNext steps:")
     print(f"  1. Ensure APP-INVENTORY.yaml lists {name} as approved with data_contract")
-    print(f"  2. python3 infra/platform/onboarding/scripts/validate-onboarding.py")
+    print("  2. python3 infra/platform/onboarding/scripts/validate-onboarding.py")
     print(f"  3. bash infra/platform/bootstrap/local/deploy-app.sh {name}")
     print("Never use real secrets. Local k3d only.")
     return 0

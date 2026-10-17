@@ -34,9 +34,19 @@ def deployable_text() -> str:
     """Read only deployable pilot/staging image values, not prose/examples."""
     paths = [
         PLATFORM / "gitops" / "applications" / "catalog" / "apps.yaml",
-        PLATFORM / "gitops" / "applications" / "values" / "dev" / "ai-doc-assistant.yaml",
+        PLATFORM
+        / "gitops"
+        / "applications"
+        / "values"
+        / "dev"
+        / "ai-doc-assistant.yaml",
         PLATFORM / "gitops" / "applications" / "values" / "dev" / "booknbook.yaml",
-        PLATFORM / "gitops" / "applications" / "values" / "staging" / "ai-doc-assistant.yaml",
+        PLATFORM
+        / "gitops"
+        / "applications"
+        / "values"
+        / "staging"
+        / "ai-doc-assistant.yaml",
         PLATFORM / "gitops" / "applications" / "values" / "staging" / "booknbook.yaml",
         PLATFORM / "helm" / "solo-app" / "homelab" / "ai-doc-assistant.yaml",
         PLATFORM / "helm" / "solo-app" / "homelab" / "booknbook.yaml",
@@ -60,7 +70,9 @@ def main() -> int:
     check(policy.exists(), "Kyverno provenance placeholder exists")
 
     text = deployable_text()
-    latest = re.findall(r"(?i)(?:^|[\s\"'])[^\s\"']+:latest(?:$|[\s\"'])", text, re.MULTILINE)
+    latest = re.findall(
+        r"(?i)(?:^|[\s\"'])[^\s\"']+:latest(?:$|[\s\"'])", text, re.MULTILINE
+    )
     check(not latest, "no :latest image reference in platform files")
 
     secret_patterns = (
@@ -76,18 +88,37 @@ def main() -> int:
     )
 
     image_tags = re.findall(r"(?m)^\s*tag:\s*[\"']?([^\"'\s#]+)", text)
-    allowed = [tag for tag in image_tags if tag == "git-pending" or re.fullmatch(r"git-[0-9a-f]{7,64}", tag)]
+    allowed = [
+        tag
+        for tag in image_tags
+        if tag == "git-pending" or re.fullmatch(r"git-[0-9a-f]{7,64}", tag)
+    ]
     check(bool(image_tags), "platform image tag fields are discoverable")
-    check(len(allowed) == len(image_tags), "all platform image tags are Git-SHA or explicit pending placeholders")
+    check(
+        len(allowed) == len(image_tags),
+        "all platform image tags are Git-SHA or explicit pending placeholders",
+    )
 
     staging = GITOPS / "applications" / "values" / "staging" / "ai-doc-assistant.yaml"
     staging_text = staging.read_text(encoding="utf-8") if staging.exists() else ""
-    check("deploymentEnabled: false" in staging_text, "staging deployment remains disabled")
-    check("dataContract: staging-durable-planned" in staging_text, "staging data contract is planned, not live")
+    check(
+        "deploymentEnabled: false" in staging_text,
+        "staging deployment remains disabled",
+    )
+    check(
+        "dataContract: staging-durable-planned" in staging_text,
+        "staging data contract is planned, not live",
+    )
 
     policy_text = policy.read_text(encoding="utf-8") if policy.exists() else ""
-    check("disabled-placeholder" in policy_text, "signature enforcement is honestly marked placeholder")
-    check("rules: []" in policy_text, "signature verification is not falsely enforced in Homelab")
+    check(
+        "disabled-placeholder" in policy_text,
+        "signature enforcement is honestly marked placeholder",
+    )
+    check(
+        "rules: []" in policy_text,
+        "signature verification is not falsely enforced in Homelab",
+    )
 
     print("=" * 60)
     print(f"Supply-chain policy: Passed={PASS} Failures={FAIL}")

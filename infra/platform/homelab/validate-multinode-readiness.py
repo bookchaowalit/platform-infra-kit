@@ -113,12 +113,16 @@ def validate_docs(c: Checker) -> None:
             c.fail(f"readiness doc missing {term}")
 
     # No public registry requirement
-    if re.search(r"(?i)public registry required|must expose registry to internet", text):
+    if re.search(
+        r"(?i)public registry required|must expose registry to internet", text
+    ):
         c.fail("doc must not require public registry")
     else:
         c.ok("no public registry requirement")
 
-    if re.search(r"(?i)multi-node\s+is\s+live|workers?\s+joined|HA\s+cluster\s+is\s+live", text):
+    if re.search(
+        r"(?i)multi-node\s+is\s+live|workers?\s+joined|HA\s+cluster\s+is\s+live", text
+    ):
         c.fail("doc falsely marks multi-node/HA as live")
     else:
         c.ok("doc does not claim multi-node live / HA live")
@@ -172,7 +176,10 @@ def validate_script(c: Checker) -> None:
         if not stripped or stripped.startswith("#"):
             continue
         # allow strings in log messages that mention forbidden words as "no X"
-        if re.search(r"(?i)(no |never |not |must not |do not ).*(k3s agent|kubectl apply|tofu apply)", stripped):
+        if re.search(
+            r"(?i)(no |never |not |must not |do not ).*(k3s agent|kubectl apply|tofu apply)",
+            stripped,
+        ):
             continue
         if FORBIDDEN_EXEC.search(stripped):
             # allow kubectl get / top only — pattern excludes get
@@ -200,7 +207,11 @@ def validate_doc_secrets_and_updates(c: Checker) -> None:
     inv = _read(INVENTORY)
     status = _read(STATUS)
     k3s = _read(K3S_RUNBOOK)
-    for blob, name in ((inv, "INVENTORY"), (status, "PLATFORM-STATUS"), (k3s, "K3S-RUNBOOK")):
+    for blob, name in (
+        (inv, "INVENTORY"),
+        (status, "PLATFORM-STATUS"),
+        (k3s, "K3S-RUNBOOK"),
+    ):
         if re.search(r"(?i)multi-node|readiness.audit|single-node", blob):
             c.ok(f"{name} references multi-node readiness or single-node state")
         else:

@@ -9,7 +9,6 @@ stay within safety boundaries (read-only scripts, no cloud apply, no secrets).
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 from pathlib import Path
@@ -36,19 +35,17 @@ MUTATING = re.compile(
     r"tofu\s+apply|terraform\s+apply|"
     r"argocd\s+app\s+(sync|delete|set)|"
     r"docker\s+compose\s+.*\b(up\s+-d|down)\b)",
-    re.I,
+    re.IGNORECASE,
 )
 
 # Allowed mentions of apply in comments about "do not apply"
 SECRET_PAT = re.compile(
     r"(password|api[_-]?key|secret[_-]?key)\s*[:=]\s*['\"][^$'\"]{8,}|"
     r"sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{20,}",
-    re.I,
+    re.IGNORECASE,
 )
 # Match real image refs only (not prose that mentions the word ":latest").
-LATEST = re.compile(
-    r"(?i)(?:image|repository)\s*:\s*['\"]?[A-Za-z0-9._\-./]+:latest\b"
-)
+LATEST = re.compile(r"(?i)(?:image|repository)\s*:\s*['\"]?[A-Za-z0-9._\-./]+:latest\b")
 
 
 class Checker:
@@ -148,7 +145,11 @@ def validate_script(c: Checker) -> None:
         c.fail("verify script not executable")
 
     text = _read(SCRIPT)
-    if "read-only" in text.lower() or "does not mutate" in text.lower() or "Read-only" in text:
+    if (
+        "read-only" in text.lower()
+        or "does not mutate" in text.lower()
+        or "Read-only" in text
+    ):
         c.ok("script documents read-only intent")
     else:
         c.fail("script must document read-only intent")
@@ -160,13 +161,20 @@ def validate_script(c: Checker) -> None:
             continue
         if MUTATING.search(line):
             # allow strings in log messages about not doing these?
-            if re.search(r"(never|do not|must not|not\s+)", line, re.I):
+            if re.search(r"(never|do not|must not|not\s+)", line, re.IGNORECASE):
                 continue
             c.fail(f"mutating command in script L{i}: {stripped[:80]}")
             return
     c.ok("no mutating kubectl/helm/tofu apply commands in script body")
 
-    for needle in ("K3S_HOST", "K3S_USER", "kubectl top", "metrics-server", "Synced", "healthz"):
+    for needle in (
+        "K3S_HOST",
+        "K3S_USER",
+        "kubectl top",
+        "metrics-server",
+        "Synced",
+        "healthz",
+    ):
         if needle in text:
             c.ok(f"script contains {needle}")
         else:
@@ -183,7 +191,7 @@ def validate_alerts(c: Checker) -> None:
     readme = _read(ALERTS_README)
     yaml_text = _read(ALERTS_YAML)
     for blob, name in ((readme, "README"), (yaml_text, "YAML")):
-        if re.search(r"design-only|DO NOT APPLY|do not apply", blob, re.I):
+        if re.search(r"design-only|DO NOT APPLY|do not apply", blob, re.IGNORECASE):
             c.ok(f"alerts {name} marked design-only / do-not-apply")
         else:
             c.fail(f"alerts {name} must be marked design-only")

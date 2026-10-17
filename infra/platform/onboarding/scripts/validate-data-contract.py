@@ -41,15 +41,15 @@ HOMELAB_VALUES = HELM / "homelab" / "ai-doc-assistant.yaml"
 STAGING_AI = VALUES_STAGING / "ai-doc-assistant.yaml"
 
 SECRET_PATTERNS = [
-    re.compile(r"soloempire2026", re.I),
+    re.compile(r"soloempire2026", re.IGNORECASE),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(
         r"(api[_-]?key|secret[_-]?key|password|token)\s*[:=]\s*['\"][A-Za-z0-9/+=_\-]{12,}['\"]",
-        re.I,
+        re.IGNORECASE,
     ),
-    re.compile(r"postgres(?:ql)?://[^:]+:[^@]+@", re.I),
+    re.compile(r"postgres(?:ql)?://[^:]+:[^@]+@", re.IGNORECASE),
 ]
 
 LATEST_TAG = re.compile(r'(?m)^\s*tag:\s*["\']?latest["\']?\s*$')
@@ -87,9 +87,12 @@ def validate_docs(c: Checker) -> None:
     print("\n[data-contract] Required documentation")
     required = {
         "DATA-CONTRACT.md": DATA_CONTRACT_DOC,
-        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_AI / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
-        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_RUNBOOKS / "STAGING-DATA-BACKUP-RESTORE.md",
-        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_AI / "AI-DOC-ASSISTANT-DATA-READINESS.md",
+        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_AI
+        / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
+        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_RUNBOOKS
+        / "STAGING-DATA-BACKUP-RESTORE.md",
+        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_AI
+        / "AI-DOC-ASSISTANT-DATA-READINESS.md",
         "PRODUCTION-GAPS.md": DOCS_PLATFORM / "PRODUCTION-GAPS.md",
     }
     for label, path in required.items():
@@ -232,10 +235,6 @@ def validate_staging_ai_doc(c: Checker) -> None:
 
     # Reject emptyDir for durable volume names
     # Allow only tmp emptyDir
-    vol_blocks = re.findall(
-        r"(?ms)^\s*-\s*name:\s*(\S+)\s*\n(?:^\s+.+\n)*?",
-        text,
-    )
     # Simpler: forbid chroma emptyDir and uploads emptyDir patterns
     if re.search(r"(?ms)name:\s*chroma.*?emptyDir:", text):
         c.fail("staging must not define chroma emptyDir volume")
@@ -327,7 +326,11 @@ def validate_platform_secret_scan(c: Checker) -> None:
         if root.is_file():
             paths = [root]
         elif root.is_dir():
-            paths = [p for p in root.rglob("*") if p.is_file() and p.suffix in {".yaml", ".yml", ".md"}]
+            paths = [
+                p
+                for p in root.rglob("*")
+                if p.is_file() and p.suffix in {".yaml", ".yml", ".md"}
+            ]
         else:
             continue
         for path in paths:

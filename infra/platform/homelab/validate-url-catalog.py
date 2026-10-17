@@ -177,7 +177,7 @@ def validate_fragment(c: Checker) -> None:
         ("platform-smoke.local", "192.168.152.114"),
         ("registry.homelab.local", "192.168.152.12"),
     ):
-        if re.search(rf"^{re.escape(ip)}\s+{re.escape(host)}\s*$", text, re.M):
+        if re.search(rf"^{re.escape(ip)}\s+{re.escape(host)}\s*$", text, re.MULTILINE):
             c.ok(f"fragment {ip} {host}")
         else:
             c.fail(f"fragment missing {ip} {host}")
@@ -237,7 +237,11 @@ def validate_controller_docs(c: Checker) -> None:
         if not text:
             c.fail(f"missing {path.name}")
             continue
-        if "port-forward" in text or "URL catalog" in text or "HOMELAB-URL-CATALOG" in text:
+        if (
+            "port-forward" in text
+            or "URL catalog" in text
+            or "HOMELAB-URL-CATALOG" in text
+        ):
             c.ok(f"{path.name} references URL/port-forward guidance")
         else:
             c.fail(f"{path.name} should document controller/URL access")

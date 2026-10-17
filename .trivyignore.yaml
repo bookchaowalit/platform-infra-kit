@@ -1,0 +1,17 @@
+misconfigurations:
+  - id: KSV-0014
+    paths:
+      - "infra/platform/gitops/homelab/netbox/netbox.yaml"
+      - "infra/platform/gitops/homelab/netbox/postgres.yaml"
+      - "infra/platform/gitops/homelab/netbox/valkey.yaml"
+      # The same files as reported by platform-validate.yml, which scans infra/platform.
+      - "gitops/homelab/netbox/netbox.yaml"
+      - "gitops/homelab/netbox/postgres.yaml"
+      - "gitops/homelab/netbox/valkey.yaml"
+    statement: >-
+      Accepted for now (DevSecOps Phase 1 exception), not a false positive: the Homelab NetBox,
+      PostgreSQL and Valkey containers run with a writable root filesystem (postgres.yaml sets
+      readOnlyRootFilesystem: false on purpose). Argo CD (netbox-homelab, selfHeal) syncs this path
+      from main, so a manifest change deploys to the homelab; the hardening (read-only root plus
+      emptyDir mounts for each image's writable paths) has to be rolled out and verified there,
+      not in a CI-only change. No other HIGH/CRITICAL Trivy check fails on these manifests.
