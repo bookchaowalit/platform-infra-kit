@@ -169,6 +169,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           format: table
+          # Same reviewed exceptions (with statements) as the shared security workflow.
+          trivyignores: .trivyignore.yaml
 
   secret-and-latest-scan:
     name: Secrets and Latest Tag Detection

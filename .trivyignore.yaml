@@ -4,6 +4,10 @@ misconfigurations:
       - "infra/platform/gitops/homelab/netbox/netbox.yaml"
       - "infra/platform/gitops/homelab/netbox/postgres.yaml"
       - "infra/platform/gitops/homelab/netbox/valkey.yaml"
+      # The same files as reported by platform-validate.yml, which scans infra/platform.
+      - "gitops/homelab/netbox/netbox.yaml"
+      - "gitops/homelab/netbox/postgres.yaml"
+      - "gitops/homelab/netbox/valkey.yaml"
     statement: >-
       Accepted for now (DevSecOps Phase 1 exception), not a false positive: the Homelab NetBox,
       PostgreSQL and Valkey containers run with a writable root filesystem (postgres.yaml sets
