@@ -68,12 +68,16 @@ class GitFileModeTest(unittest.TestCase):
             root = Path(temp)
             script = root / "script.sh"
             script.write_text("#!/bin/sh\n", encoding="utf-8")
-            with patch(
-                "git_file_mode.subprocess.run",
-                return_value=subprocess.CompletedProcess([], 1, "", "git unavailable"),
+            with (
+                patch(
+                    "git_file_mode.subprocess.run",
+                    return_value=subprocess.CompletedProcess(
+                        [], 1, "", "git unavailable"
+                    ),
+                ),
+                self.assertRaises(FileModeError),
             ):
-                with self.assertRaises(FileModeError):
-                    has_executable_bit(script, root, os_name="nt")
+                has_executable_bit(script, root, os_name="nt")
 
 
 if __name__ == "__main__":

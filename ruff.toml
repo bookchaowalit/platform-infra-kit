@@ -1,0 +1,6 @@
+# Ruff defaults, adjusted for this repository (DevSecOps Phase 1):
+[lint]
+# - I001: the validators put infra/platform/* on sys.path before importing their helpers, so
+#   imports are not re-sorted.
+# - RUF100: the existing `# noqa: E402` comments mark those late imports; keep them.
+extend-ignore = ["I001", "RUF100"]

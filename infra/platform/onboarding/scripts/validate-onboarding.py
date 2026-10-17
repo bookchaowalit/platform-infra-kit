@@ -39,13 +39,13 @@ sys.path.insert(0, str(SCRIPTS))
 from lib_yaml import load_pilot_app, load_yaml  # noqa: E402
 
 SECRET_PATTERNS = [
-    re.compile(r"soloempire2026", re.I),
+    re.compile(r"soloempire2026", re.IGNORECASE),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(
         r"(api[_-]?key|secret[_-]?key|password|token)\s*[:=]\s*['\"][A-Za-z0-9/+=_\-]{12,}['\"]",
-        re.I,
+        re.IGNORECASE,
     ),
 ]
 
@@ -341,7 +341,7 @@ def validate_no_secrets_in_onboarding(c: Checker) -> None:
                 continue
             if "soloempire2026" in pat.pattern:
                 if re.search(
-                    r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.I
+                    r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.IGNORECASE
                 ):
                     c.fail(f"secret-like content in {path.relative_to(ROOT)}")
                     return

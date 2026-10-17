@@ -75,7 +75,7 @@ def add_device(
         defaults={"type": "1000base-t"},
     )
     ip = add_ip(
-        interface, f"{address}/24", f"Management address observed in Homelab inventory"
+        interface, f"{address}/24", "Management address observed in Homelab inventory"
     )
     if item.primary_ip4_id != ip.pk:
         item.primary_ip4 = ip

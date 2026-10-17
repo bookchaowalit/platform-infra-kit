@@ -142,7 +142,6 @@ spec:
     # Fix run_as_user null representation and runbook path convention
     if not args.run_as_user:
         content = content.replace("  run_as_user: null\n", "")
-    runbook_name = name.upper().replace("-", "-")
     # Prefer NAME with hyphens uppercased poorly; use stable slug style
     runbook_rel = f"operations/{name.upper()}-PILOT-RUNBOOK.md"
     # booknbook style is BOOKNBOOK; ai-doc is AI-DOC-ASSISTANT
@@ -356,7 +355,7 @@ def main() -> int:
         print(f"  {a}")
     print("\nNext steps:")
     print(f"  1. Ensure APP-INVENTORY.yaml lists {name} as approved with data_contract")
-    print(f"  2. python3 infra/platform/onboarding/scripts/validate-onboarding.py")
+    print("  2. python3 infra/platform/onboarding/scripts/validate-onboarding.py")
     print(f"  3. bash infra/platform/bootstrap/local/deploy-app.sh {name}")
     print("Never use real secrets. Local k3d only.")
     return 0

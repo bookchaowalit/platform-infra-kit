@@ -37,14 +37,14 @@ GITOPS = PLATFORM / "gitops"
 
 # Patterns that indicate committed secrets in production-target paths
 SECRET_PATTERNS = [
-    re.compile(r"soloempire2026", re.I),
+    re.compile(r"soloempire2026", re.IGNORECASE),
     re.compile(
         r"password\s*[:=]\s*['\"]?(?!change-me|changeme|\$\{|<.*>|your-|placeholder|example)[^\s'\"]{8,}",
-        re.I,
+        re.IGNORECASE,
     ),
     re.compile(
         r"(api[_-]?key|secret[_-]?key|private[_-]?key)\s*[:=]\s*['\"][A-Za-z0-9/+=]{16,}['\"]",
-        re.I,
+        re.IGNORECASE,
     ),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
@@ -54,7 +54,7 @@ SECRET_PATTERNS = [
 # Match image references ending in :latest, but not policy patterns like "!*:latest"
 LATEST_IMAGE = re.compile(
     r"""(?:image:\s*|repository:\s*)['"]?([A-Za-z0-9._\-]+(?:/[A-Za-z0-9._\-]+)*:latest)['"]?""",
-    re.I,
+    re.IGNORECASE,
 )
 
 # Known lab-only :latest exceptions (annotated in compose; not production targets)
@@ -288,7 +288,9 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
                 if "soloempire2026" in pat.pattern and "soloempire2026" in text:
                     # only fail if it looks like an assignment
                     if re.search(
-                        r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.I
+                        r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026",
+                        text,
+                        re.IGNORECASE,
                     ):
                         bad_secret_hits.append(f"{rel}: soloempire2026 assignment")
                 elif "soloempire2026" not in pat.pattern:
@@ -296,13 +298,13 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
                     if path.suffix in {".tf", ".tftpl", ".hcl", ".md"} and re.search(
                         r"random_password|registry_password|htpasswd|sensitive\s*=\s*true",
                         text,
-                        re.I,
+                        re.IGNORECASE,
                     ):
                         # still flag hard-coded quoted secrets
                         if re.search(
                             r"""(?<!_)(password|token|secret)\s*=\s*["'][A-Za-z0-9/+=_\-]{12,}["']""",
                             text,
-                            re.I,
+                            re.IGNORECASE,
                         ):
                             bad_secret_hits.append(
                                 f"{rel}: hardcoded secret assignment"
@@ -401,29 +403,28 @@ def test_onboarding_workflow(c: Checker) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        check=False,  # the return code is reported below
     )
     # Re-print child output indented for readability
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("  ✅") or line.startswith("  ❌"):
+        if line.startswith(("  ✅", "  ❌")):
             # Count via parent checker based on markers
             msg = line[4:].strip() if len(line) > 4 else line
             if line.startswith("  ✅"):
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif (
-            line.startswith("Solo Empire")
-            or line.startswith("[onboarding]")
-            or line.startswith("=")
+        elif line.startswith(
+            (
+                "Solo Empire",
+                "[onboarding]",
+                "=",
+                "Onboarding:",
+                "All onboarding",
+                "FAILURES",
+                "  - ",
+            )
         ):
-            print(line)
-        elif (
-            line.startswith("Onboarding:")
-            or line.startswith("All onboarding")
-            or line.startswith("FAILURES")
-        ):
-            print(line)
-        elif line.startswith("  - "):
             print(line)
 
     if proc.returncode != 0 and not any("onboarding" in f.lower() for f in c.failures):
@@ -457,22 +458,25 @@ def test_url_catalog_workflow(c: Checker) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        check=False,  # the return code is reported below
     )
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("  ✅") or line.startswith("  ❌"):
+        if line.startswith(("  ✅", "  ❌")):
             msg = line[4:].strip() if len(line) > 4 else line
             if line.startswith("  ✅"):
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif (
-            line.startswith("Solo Empire")
-            or line.startswith("[url-catalog]")
-            or line.startswith("=")
-            or line.startswith("URL-catalog:")
-            or line.startswith("All URL")
-            or line.startswith("FAILURES")
-            or line.startswith("  - ")
+        elif line.startswith(
+            (
+                "Solo Empire",
+                "[url-catalog]",
+                "=",
+                "URL-catalog:",
+                "All URL",
+                "FAILURES",
+                "  - ",
+            )
         ):
             print(line)
 
@@ -507,22 +511,25 @@ def test_multinode_readiness_workflow(c: Checker) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        check=False,  # the return code is reported below
     )
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("  ✅") or line.startswith("  ❌"):
+        if line.startswith(("  ✅", "  ❌")):
             msg = line[4:].strip() if len(line) > 4 else line
             if line.startswith("  ✅"):
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif (
-            line.startswith("Solo Empire")
-            or line.startswith("[multinode]")
-            or line.startswith("=")
-            or line.startswith("Multinode:")
-            or line.startswith("All multi-node")
-            or line.startswith("FAILURES")
-            or line.startswith("  - ")
+        elif line.startswith(
+            (
+                "Solo Empire",
+                "[multinode]",
+                "=",
+                "Multinode:",
+                "All multi-node",
+                "FAILURES",
+                "  - ",
+            )
         ):
             print(line)
 
@@ -560,22 +567,25 @@ def test_observability_workflow(c: Checker) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        check=False,  # the return code is reported below
     )
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("  ✅") or line.startswith("  ❌"):
+        if line.startswith(("  ✅", "  ❌")):
             msg = line[4:].strip() if len(line) > 4 else line
             if line.startswith("  ✅"):
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif (
-            line.startswith("Solo Empire")
-            or line.startswith("[observability]")
-            or line.startswith("=")
-            or line.startswith("Observability:")
-            or line.startswith("All observability")
-            or line.startswith("FAILURES")
-            or line.startswith("  - ")
+        elif line.startswith(
+            (
+                "Solo Empire",
+                "[observability]",
+                "=",
+                "Observability:",
+                "All observability",
+                "FAILURES",
+                "  - ",
+            )
         ):
             print(line)
 
@@ -612,27 +622,26 @@ def test_data_contract_workflow(c: Checker) -> None:
         text=True,
         encoding="utf-8",
         errors="replace",
+        check=False,  # the return code is reported below
     )
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("  ✅") or line.startswith("  ❌"):
+        if line.startswith(("  ✅", "  ❌")):
             msg = line[4:].strip() if len(line) > 4 else line
             if line.startswith("  ✅"):
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif (
-            line.startswith("Solo Empire")
-            or line.startswith("[data-contract]")
-            or line.startswith("=")
+        elif line.startswith(
+            (
+                "Solo Empire",
+                "[data-contract]",
+                "=",
+                "Data-contract:",
+                "All data-contract",
+                "FAILURES",
+                "  - ",
+            )
         ):
-            print(line)
-        elif (
-            line.startswith("Data-contract:")
-            or line.startswith("All data-contract")
-            or line.startswith("FAILURES")
-        ):
-            print(line)
-        elif line.startswith("  - "):
             print(line)
 
     if proc.returncode != 0 and not any(

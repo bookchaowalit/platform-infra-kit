@@ -177,7 +177,7 @@ def validate_fragment(c: Checker) -> None:
         ("platform-smoke.local", "192.168.152.114"),
         ("registry.homelab.local", "192.168.152.12"),
     ):
-        if re.search(rf"^{re.escape(ip)}\s+{re.escape(host)}\s*$", text, re.M):
+        if re.search(rf"^{re.escape(ip)}\s+{re.escape(host)}\s*$", text, re.MULTILINE):
             c.ok(f"fragment {ip} {host}")
         else:
             c.fail(f"fragment missing {ip} {host}")
