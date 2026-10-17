@@ -56,7 +56,9 @@ def add_ip(interface, address: str, description: str) -> IPAddress:
     return ip
 
 
-def add_device(name: str, address: str, model: str, type_slug: str, role_key: str, comments: str):
+def add_device(
+    name: str, address: str, model: str, type_slug: str, role_key: str, comments: str
+):
     item, _ = Device.objects.get_or_create(
         name=name,
         site=site,
@@ -72,7 +74,9 @@ def add_device(name: str, address: str, model: str, type_slug: str, role_key: st
         name="management",
         defaults={"type": "1000base-t"},
     )
-    ip = add_ip(interface, f"{address}/24", f"Management address observed in Homelab inventory")
+    ip = add_ip(
+        interface, f"{address}/24", f"Management address observed in Homelab inventory"
+    )
     if item.primary_ip4_id != ip.pk:
         item.primary_ip4 = ip
         item.save()
@@ -122,7 +126,10 @@ add_device(
 
 cluster_type, _ = ClusterType.objects.get_or_create(
     slug="k3s",
-    defaults={"name": "K3s", "description": "K3s cluster running on the Homelab private LAN."},
+    defaults={
+        "name": "K3s",
+        "description": "K3s cluster running on the Homelab private LAN.",
+    },
 )
 
 cluster, _ = Cluster.objects.get_or_create(
@@ -148,7 +155,11 @@ vm_interface, _ = VMInterface.objects.get_or_create(
     virtual_machine=vm,
     name="management",
 )
-vm_ip = add_ip(vm_interface, "192.168.152.114/24", "K3s management address observed in Homelab inventory")
+vm_ip = add_ip(
+    vm_interface,
+    "192.168.152.114/24",
+    "K3s management address observed in Homelab inventory",
+)
 if vm.primary_ip4_id != vm_ip.pk:
     vm.primary_ip4 = vm_ip
     vm.save()

@@ -38,8 +38,14 @@ GITOPS = PLATFORM / "gitops"
 # Patterns that indicate committed secrets in production-target paths
 SECRET_PATTERNS = [
     re.compile(r"soloempire2026", re.I),
-    re.compile(r"password\s*[:=]\s*['\"]?(?!change-me|changeme|\$\{|<.*>|your-|placeholder|example)[^\s'\"]{8,}", re.I),
-    re.compile(r"(api[_-]?key|secret[_-]?key|private[_-]?key)\s*[:=]\s*['\"][A-Za-z0-9/+=]{16,}['\"]", re.I),
+    re.compile(
+        r"password\s*[:=]\s*['\"]?(?!change-me|changeme|\$\{|<.*>|your-|placeholder|example)[^\s'\"]{8,}",
+        re.I,
+    ),
+    re.compile(
+        r"(api[_-]?key|secret[_-]?key|private[_-]?key)\s*[:=]\s*['\"][A-Za-z0-9/+=]{16,}['\"]",
+        re.I,
+    ),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
     re.compile(r"xox[bpas]-[A-Za-z0-9-]{10,}"),
@@ -140,7 +146,10 @@ def test_helm_chart(c: Checker) -> None:
         c.ok("ExternalSecret uses solo-app.externalSecretName")
     else:
         c.fail("ExternalSecret does not use solo-app.externalSecretName")
-    if 'include "solo-app.externalSecretName"' in dep and "externalSecrets.enabled" in dep:
+    if (
+        'include "solo-app.externalSecretName"' in dep
+        and "externalSecrets.enabled" in dep
+    ):
         c.ok("Deployment auto-mounts ExternalSecret when enabled")
     else:
         c.fail("Deployment does not auto-wire ExternalSecret target name")
@@ -151,10 +160,16 @@ def test_helm_chart(c: Checker) -> None:
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
-        if re.search(r"envFromSecrets:\s*\n\s*-\s*secretRef:\s*\n\s*name:\s*example-api-secrets", text):
-            c.fail(f"{env}/example-api.yaml still hardcodes envFromSecrets example-api-secrets")
+        if re.search(
+            r"envFromSecrets:\s*\n\s*-\s*secretRef:\s*\n\s*name:\s*example-api-secrets",
+            text,
+        ):
+            c.fail(
+                f"{env}/example-api.yaml still hardcodes envFromSecrets example-api-secrets"
+            )
         else:
             c.ok(f"{env}/example-api.yaml relies on auto-wired ExternalSecret mount")
+
 
 def test_gitops(c: Checker) -> None:
     print("\n[gitops] Application catalog and overlays")
@@ -219,7 +234,10 @@ def test_policies(c: Checker) -> None:
             c.fail(f"Missing policy: {name}")
             continue
         text = path.read_text(encoding="utf-8")
-        if "validationFailureAction: Audit" in text or name == "image-provenance-placeholder.yaml":
+        if (
+            "validationFailureAction: Audit" in text
+            or name == "image-provenance-placeholder.yaml"
+        ):
             c.ok(f"{name} present (Audit/placeholder)")
         else:
             c.fail(f"{name} not in Audit mode")
@@ -247,7 +265,16 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
             continue
         if path.name.endswith(".tfstate.backup"):
             continue
-        if path.suffix not in {".yaml", ".yml", ".tpl", ".txt", ".md", ".tf", ".tftpl", ".example"}:
+        if path.suffix not in {
+            ".yaml",
+            ".yml",
+            ".tpl",
+            ".txt",
+            ".md",
+            ".tf",
+            ".tftpl",
+            ".example",
+        }:
             continue
         if path.name in skip_parts and path.suffix == ".md":
             # still scan md lightly for secrets but not latest
@@ -260,7 +287,9 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
                 # Allow documentation mentioning the old password pattern as forbidden example
                 if "soloempire2026" in pat.pattern and "soloempire2026" in text:
                     # only fail if it looks like an assignment
-                    if re.search(r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.I):
+                    if re.search(
+                        r"(PASSWORD|TOKEN|SECRET).{0,20}soloempire2026", text, re.I
+                    ):
                         bad_secret_hits.append(f"{rel}: soloempire2026 assignment")
                 elif "soloempire2026" not in pat.pattern:
                     # OpenTofu password variables / random_password are not committed secrets
@@ -275,7 +304,9 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
                             text,
                             re.I,
                         ):
-                            bad_secret_hits.append(f"{rel}: hardcoded secret assignment")
+                            bad_secret_hits.append(
+                                f"{rel}: hardcoded secret assignment"
+                            )
                         continue
                     bad_secret_hits.append(f"{rel}: {pat.pattern[:40]}")
 
@@ -309,7 +340,9 @@ def test_platform_no_secrets_or_latest(c: Checker, strict: bool) -> None:
         if strict:
             c.fail("KUBERNETES-PLATFORM-READINESS.md missing")
         else:
-            c.warn("KUBERNETES-PLATFORM-READINESS.md missing (create in this change set)")
+            c.warn(
+                "KUBERNETES-PLATFORM-READINESS.md missing (create in this change set)"
+            )
 
 
 def test_gitignore_env(c: Checker) -> None:
@@ -378,9 +411,17 @@ def test_onboarding_workflow(c: Checker) -> None:
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif line.startswith("Solo Empire") or line.startswith("[onboarding]") or line.startswith("="):
+        elif (
+            line.startswith("Solo Empire")
+            or line.startswith("[onboarding]")
+            or line.startswith("=")
+        ):
             print(line)
-        elif line.startswith("Onboarding:") or line.startswith("All onboarding") or line.startswith("FAILURES"):
+        elif (
+            line.startswith("Onboarding:")
+            or line.startswith("All onboarding")
+            or line.startswith("FAILURES")
+        ):
             print(line)
         elif line.startswith("  - "):
             print(line)
@@ -435,7 +476,9 @@ def test_url_catalog_workflow(c: Checker) -> None:
         ):
             print(line)
 
-    if proc.returncode != 0 and not any("url" in f.lower() or "catalog" in f.lower() for f in c.failures):
+    if proc.returncode != 0 and not any(
+        "url" in f.lower() or "catalog" in f.lower() for f in c.failures
+    ):
         err = (proc.stderr or "").strip() or f"exit {proc.returncode}"
         c.fail(f"validate-url-catalog.py failed: {err[:200]}")
 
@@ -483,7 +526,9 @@ def test_multinode_readiness_workflow(c: Checker) -> None:
         ):
             print(line)
 
-    if proc.returncode != 0 and not any("multi-node" in f.lower() or "multinode" in f.lower() for f in c.failures):
+    if proc.returncode != 0 and not any(
+        "multi-node" in f.lower() or "multinode" in f.lower() for f in c.failures
+    ):
         err = (proc.stderr or "").strip() or f"exit {proc.returncode}"
         c.fail(f"validate-multinode-readiness.py failed: {err[:200]}")
 
@@ -534,7 +579,9 @@ def test_observability_workflow(c: Checker) -> None:
         ):
             print(line)
 
-    if proc.returncode != 0 and not any("observability" in f.lower() for f in c.failures):
+    if proc.returncode != 0 and not any(
+        "observability" in f.lower() for f in c.failures
+    ):
         err = (proc.stderr or "").strip() or f"exit {proc.returncode}"
         c.fail(f"validate-observability.py failed: {err[:200]}")
 
@@ -573,14 +620,24 @@ def test_data_contract_workflow(c: Checker) -> None:
                 c.ok(msg)
             else:
                 c.fail(msg)
-        elif line.startswith("Solo Empire") or line.startswith("[data-contract]") or line.startswith("="):
+        elif (
+            line.startswith("Solo Empire")
+            or line.startswith("[data-contract]")
+            or line.startswith("=")
+        ):
             print(line)
-        elif line.startswith("Data-contract:") or line.startswith("All data-contract") or line.startswith("FAILURES"):
+        elif (
+            line.startswith("Data-contract:")
+            or line.startswith("All data-contract")
+            or line.startswith("FAILURES")
+        ):
             print(line)
         elif line.startswith("  - "):
             print(line)
 
-    if proc.returncode != 0 and not any("data-contract" in f.lower() or "staging" in f.lower() for f in c.failures):
+    if proc.returncode != 0 and not any(
+        "data-contract" in f.lower() or "staging" in f.lower() for f in c.failures
+    ):
         err = (proc.stderr or "").strip() or f"exit {proc.returncode}"
         c.fail(f"validate-data-contract.py failed: {err[:200]}")
 
@@ -609,7 +666,9 @@ def main() -> int:
     test_url_catalog_workflow(c)
 
     print("\n" + "=" * 60)
-    print(f"Passed: {c.passed}  Failures: {len(c.failures)}  Warnings: {len(c.warnings)}")
+    print(
+        f"Passed: {c.passed}  Failures: {len(c.failures)}  Warnings: {len(c.warnings)}"
+    )
     if c.failures:
         print("FAILURES:")
         for f in c.failures:

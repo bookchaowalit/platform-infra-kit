@@ -21,7 +21,9 @@ from git_file_mode import FileModeError, has_executable_bit  # noqa: E402
 
 
 class GitFileModeTest(unittest.TestCase):
-    @unittest.skipIf(os.name == "nt", "POSIX execute bits are not available in Windows worktrees")
+    @unittest.skipIf(
+        os.name == "nt", "POSIX execute bits are not available in Windows worktrees"
+    )
     def test_posix_checks_working_tree_execute_bit(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

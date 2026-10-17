@@ -237,7 +237,11 @@ def validate_controller_docs(c: Checker) -> None:
         if not text:
             c.fail(f"missing {path.name}")
             continue
-        if "port-forward" in text or "URL catalog" in text or "HOMELAB-URL-CATALOG" in text:
+        if (
+            "port-forward" in text
+            or "URL catalog" in text
+            or "HOMELAB-URL-CATALOG" in text
+        ):
             c.ok(f"{path.name} references URL/port-forward guidance")
         else:
             c.fail(f"{path.name} should document controller/URL access")

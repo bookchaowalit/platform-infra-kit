@@ -46,9 +46,7 @@ SECRET_PAT = re.compile(
     re.I,
 )
 # Match real image refs only (not prose that mentions the word ":latest").
-LATEST = re.compile(
-    r"(?i)(?:image|repository)\s*:\s*['\"]?[A-Za-z0-9._\-./]+:latest\b"
-)
+LATEST = re.compile(r"(?i)(?:image|repository)\s*:\s*['\"]?[A-Za-z0-9._\-./]+:latest\b")
 
 
 class Checker:
@@ -148,7 +146,11 @@ def validate_script(c: Checker) -> None:
         c.fail("verify script not executable")
 
     text = _read(SCRIPT)
-    if "read-only" in text.lower() or "does not mutate" in text.lower() or "Read-only" in text:
+    if (
+        "read-only" in text.lower()
+        or "does not mutate" in text.lower()
+        or "Read-only" in text
+    ):
         c.ok("script documents read-only intent")
     else:
         c.fail("script must document read-only intent")
@@ -166,7 +168,14 @@ def validate_script(c: Checker) -> None:
             return
     c.ok("no mutating kubectl/helm/tofu apply commands in script body")
 
-    for needle in ("K3S_HOST", "K3S_USER", "kubectl top", "metrics-server", "Synced", "healthz"):
+    for needle in (
+        "K3S_HOST",
+        "K3S_USER",
+        "kubectl top",
+        "metrics-server",
+        "Synced",
+        "healthz",
+    ):
         if needle in text:
             c.ok(f"script contains {needle}")
         else:

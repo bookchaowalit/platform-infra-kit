@@ -87,9 +87,12 @@ def validate_docs(c: Checker) -> None:
     print("\n[data-contract] Required documentation")
     required = {
         "DATA-CONTRACT.md": DATA_CONTRACT_DOC,
-        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_AI / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
-        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_RUNBOOKS / "STAGING-DATA-BACKUP-RESTORE.md",
-        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_AI / "AI-DOC-ASSISTANT-DATA-READINESS.md",
+        "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md": DOCS_AI
+        / "AI-DOC-ASSISTANT-DURABLE-DATA-PLAN.md",
+        "STAGING-DATA-BACKUP-RESTORE.md": DOCS_RUNBOOKS
+        / "STAGING-DATA-BACKUP-RESTORE.md",
+        "AI-DOC-ASSISTANT-DATA-READINESS.md": DOCS_AI
+        / "AI-DOC-ASSISTANT-DATA-READINESS.md",
         "PRODUCTION-GAPS.md": DOCS_PLATFORM / "PRODUCTION-GAPS.md",
     }
     for label, path in required.items():
@@ -327,7 +330,11 @@ def validate_platform_secret_scan(c: Checker) -> None:
         if root.is_file():
             paths = [root]
         elif root.is_dir():
-            paths = [p for p in root.rglob("*") if p.is_file() and p.suffix in {".yaml", ".yml", ".md"}]
+            paths = [
+                p
+                for p in root.rglob("*")
+                if p.is_file() and p.suffix in {".yaml", ".yml", ".md"}
+            ]
         else:
             continue
         for path in paths:
