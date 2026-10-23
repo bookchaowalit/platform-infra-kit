@@ -1,0 +1,88 @@
+name: Shared infrastructure acceptance
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: shared-infrastructure-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PLATFORM_TEST_DSN: dbname=postgres user=postgres host=127.0.0.1 port=5432
+      PLATFORM_PG_BIN: /usr/lib/postgresql/16/bin
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build, test and matching database tools
+        run: |
+          python -m pip install 'setuptools>=77' 'pytest>=8,<10' 'PyYAML>=6,<7'
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-16
+      - name: Export reviewed public source revisions
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          revisions = {
+              'backend-core': 'd00e0119c2e47da3942d9c7b4b88828953f8bc5a',
+              'workflow': 'c17164f0daa9bdbeb073ead9d7620dfb0c7d4f0b',
+              'data': '21f2ed6702f5804aed271932288403999aebdd6b',
+              'developer': '00971f7daaa4ed22401ce66a933964595866508f',
+              'security': '89d15f88c73be244e1eea90ca1ea2d875689fcc6',
+              'communication': 'f444d98eec3f57098307b2d9cc1218b0f62843cc',
+              'media': '6276f6a1f287a5cb326e4fe8ad5d8c43c7c45c53',
+              'payment': '0b5799c7c6372e3ffd670dae533ec3c9d388fdd3',
+              'observability': 'e2d1ab3bcd1cf57d06c3c7ee1e2d4e21afe0638a',
+          }
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'reviewed-source'
+          root.mkdir()
+          sources = {'platform-infra-kit': os.environ['GITHUB_WORKSPACE']}
+          for suffix, revision in revisions.items():
+              name = 'platform-' + suffix
+              path = root / name
+              subprocess.run(['git', 'init', '-q', str(path)], check=True)
+              subprocess.run(['git', '-C', str(path), 'remote', 'add', 'origin',
+                              'https://github.com/bookchaowalit-backend/' + name + '.git'], check=True)
+              subprocess.run(['git', '-C', str(path), 'fetch', '--depth=1', 'origin', revision], check=True)
+              subprocess.run(['git', '-C', str(path), 'checkout', '--detach', 'FETCH_HEAD'], check=True)
+              sources[name] = str(path)
+          (pathlib.Path(os.environ['RUNNER_TEMP']) / 'source-paths.json').write_text(json.dumps(sources))
+          PY
+      - name: Build and install the exact offline release bundle
+        run: |
+          python -m shared_infra.bundle --sources "$RUNNER_TEMP/source-paths.json" --output "$RUNNER_TEMP/release"
+          python -m pip install --no-index --only-binary=:all: --find-links="$RUNNER_TEMP/release/wheels" platform-infra-kit==0.1.0 platform-workflow==0.1.0 platform-data==0.1.0 platform-developer==0.1.0 platform-security==0.1.0 platform-communication==0.1.0 platform-media==0.1.0 platform-payment==0.1.0
+          python -m pip check
+          python -m shared_infra verify-bundle "$RUNNER_TEMP/release"
+      - name: Run real replicas, worker recovery, role caps and restore tests
+        run: python -m pytest -q
+      - name: Build the Dockerfile without registry publication
+        run: |
+          docker build --network=none --build-arg BASE_IMAGE=python:3.12-slim@sha256:2b4f19dae3a777dfc3b76730bda1e82e1f66ab2a2686fa93ca78edbfb4f04ffe --tag shared-infra:test "$RUNNER_TEMP/release"
+          docker run --rm --network=none shared-infra:test python -c 'import platform_backend_core,platform_workflow,platform_data,platform_developer,platform_security,platform_communication,platform_media,platform_payment,platform_observability,shared_infra'
+      - name: Build pinned Railway artifact from public commits (no publication)
+        run: |
+          docker build --platform=linux/amd64 --file shared-infra/railway/Dockerfile --build-arg INFRA_SOURCE_SHA="$GITHUB_SHA" --tag shared-infra:railway .
+          docker run --rm --network=none shared-infra:railway python -c 'import sys; assert sys.version_info[:2]==(3,12); import platform_backend_core,platform_workflow,platform_data,platform_developer,platform_security,platform_communication,platform_media,platform_payment,platform_observability,shared_infra.railway_staging'
+          docker run --rm --network=none shared-infra:railway /usr/lib/postgresql/16/bin/pg_dump --version | grep -E 'PostgreSQL\) 16\.'
+          docker run --rm --network=none shared-infra:railway /usr/lib/postgresql/16/bin/pg_restore --version | grep -E 'PostgreSQL\) 16\.'
+          docker run --rm --network=none shared-infra:railway python -c 'from shared_infra.railway_staging import DirectChildDeadline; DirectChildDeadline.preflight(); print("Linux procfs/pidfd deadline prerequisites passed")'
