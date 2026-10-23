@@ -14,6 +14,7 @@ repo นี้คงโครงสร้าง path แบบ `infra/platform/.
 ```bash
 python3 infra/tests/platform/platform_validation_test.py --strict-platform
 python3 infra/tests/platform/git_file_mode_test.py
+python3 infra/tests/platform/onboarding_scripts_test.py
 python3 infra/platform/onboarding/scripts/validate-onboarding.py
 python3 infra/platform/observability/validate-observability.py
 python3 infra/platform/supply-chain/validate-image-policy.py
@@ -21,7 +22,9 @@ python3 infra/platform/homelab/validate-url-catalog.py
 python3 infra/platform/homelab/validate-multinode-readiness.py
 ```
 
-CI: `.github/workflows/platform-validate.yml` (ย้ายมาจาก solo-empire; job compose-config ย้ายไป homelab).
+CI: `.github/workflows/ci.yml` (shared `platform-ci-workflows` v1.1.1: Ruff + test suites ด้านบน + security scan) และ `.github/workflows/platform-validate.yml` (ย้ายมาจาก solo-empire; job compose-config ย้ายไป homelab).
+
+สิ่งที่ repo นี้เป็นและไม่เป็น: [PRODUCT.md](PRODUCT.md)
 
 ## หมายเหตุสำคัญ
 
