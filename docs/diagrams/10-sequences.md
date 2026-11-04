@@ -49,6 +49,7 @@ sequenceDiagram
   BP->>BP: TAG = git-SHA of app repo
   BP->>REG: docker build and push solo-empire/booknbook:TAG
   BP-->>Op: IMAGE_TAG=TAG
+  Op->>GH: edit Application image.tag to TAG and push (apply script only replaces git-pending)
   Op->>AP: run with IMAGE_TAG
   AP->>AP: sed git-pending to IMAGE_TAG on a temp copy
   AP->>K3S: scp AppProject, approved-registries, Application
