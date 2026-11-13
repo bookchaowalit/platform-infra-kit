@@ -181,7 +181,7 @@ GitHub private repo (read-only deploy key)
 |------|-------|
 | Git path on `main` | `infra/platform/gitops/homelab/platform-smoke` |
 | Application | `platform-smoke-homelab` Synced / Healthy |
-| repoURL | `git@github.com:bookchaowalit/solo-empire.git` |
+| repoURL | `git@github.com:bookchaowalit/platform-infra-kit.git` |
 | Self-heal | Verified against GitHub-backed desired state |
 | Lab `file://` snapshot | Removed after durable cutover |
 

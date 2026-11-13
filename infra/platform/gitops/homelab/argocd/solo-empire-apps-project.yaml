@@ -13,7 +13,7 @@ metadata:
 spec:
   description: Solo Empire application deployments (local pilots + homelab synthetic smoke).
   sourceRepos:
-    - 'https://github.com/bookchaowalit/solo-empire.git'
+    - 'https://github.com/bookchaowalit/platform-infra-kit.git'
     - 'git://*'
     - 'http://*'
     - 'https://*'

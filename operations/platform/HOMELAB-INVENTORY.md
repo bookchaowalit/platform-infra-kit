@@ -137,7 +137,7 @@ cert-manager, Argo CD, Kyverno Audit, External Secrets Operator, and the K3s
 metrics-server. The synthetic `platform-smoke` workload is healthy through
 private ingress and is owned by Argo CD Application `platform-smoke-homelab`
 (Git path `infra/platform/gitops/homelab/platform-smoke` on `main`, durable
-`git@github.com:bookchaowalit/solo-empire.git` with a cluster-local read-only
+`git@github.com:bookchaowalit/platform-infra-kit.git` with a cluster-local read-only
 deploy key).
 
 Private registry target (separate from K3s):

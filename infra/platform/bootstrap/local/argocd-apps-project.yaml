@@ -11,7 +11,7 @@ spec:
   description: Local business application deployments (pilot apps only).
   sourceRepos:
     # Configurable: remote HTTPS Git and/or local disposable git-daemon snapshot
-    - 'https://github.com/bookchaowalit/solo-empire.git'
+    - 'https://github.com/bookchaowalit/platform-infra-kit.git'
     - 'git://*'
     - 'http://*'
     - 'https://*'

@@ -155,14 +155,14 @@ Ready for local-only certificate tests.
 
 ### Git repository access (durable)
 
-`bookchaowalit/solo-empire` is a **private** GitHub repository. Homelab Argo CD
-uses a **read-only deploy key** registered out of band (cluster secret
+The Argo CD source is `bookchaowalit/platform-infra-kit` (the manifests moved there from solo-empire
+on 2026-10-11). Homelab Argo CD uses a **read-only deploy key** registered out of band (cluster secret
 `repo-solo-empire-github`). Credentials are never committed and never pasted
 into chat.
 
 | Item | Value |
 |---|---|
-| Durable `repoURL` | `git@github.com:bookchaowalit/solo-empire.git` |
+| Durable `repoURL` | `git@github.com:bookchaowalit/platform-infra-kit.git` |
 | Target revision | `main` |
 | Source path | `infra/platform/gitops/homelab/platform-smoke` |
 | Argo repo secret | `repo-solo-empire-github` (SSH deploy key; cluster-local only) |
