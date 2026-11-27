@@ -2,6 +2,8 @@
 
 repo นี้ไม่มีธุรกิจหรือลูกค้าภายนอก ([PRODUCT.md](../../PRODUCT.md): "No external users") กระบวนการที่มีคือ **กระบวนการ platform ของ owner**: เปลี่ยน desired state ใน Git → ตรวจ offline ใน CI → (สำหรับ Homelab) Argo CD sync เข้า cluster; การขึ้น cluster/โครงสร้างใหม่ทำมือโดย operator
 
+Last reviewed: 2026-11-27 · commit `89cfccc`
+
 ## As-Is (จากไฟล์วันนี้)
 
 ```mermaid
@@ -53,7 +55,18 @@ Sources: `operations/platform/PRODUCTION-GAPS.md` (Summary table), `infra/platfo
 
 ทุกขั้นใน To-Be เป็น **gap** ณ วันนี้ (PRODUCTION-GAPS: Cosign "enforcement not active", SBOM "Not published in CI", Staging app deployment `deploymentEnabled: false`)
 
+## Gap
+
+| ID | As-Is → To-Be | Status | Owner | Evidence |
+|---|---|---|---|---|
+| G1 | CI ไม่ publish SBOM / provenance → SBOM, vuln scan, Cosign signature ที่ build job ของ app | todo | claude | `operations/platform/PRODUCTION-GAPS.md`; `infra/platform/supply-chain/README.md` |
+| G2 | image signature enforcement เป็น placeholder (`rules: []`) → enforced admission ที่ production | todo | claude | `operations/platform/PRODUCTION-GAPS.md` (Cosign) |
+| G3 | staging `deploymentEnabled: false` และ ApplicationSet staging ปิด → เปิดหลังผ่าน ENVIRONMENT-CONTRACT และคนเปิดเอง | decide | owner | `infra/platform/gitops/applications/values/staging/ai-doc-assistant.yaml`; `applicationset.yaml` |
+| G4 | staging fsn1 เป็นแผน (tofu plan `provision=false`) → provision ด้วย tofu apply ที่ได้รับอนุมัติ | decide | owner | `infra/platform/iac/scripts/apply-staging.sh`; `PRODUCTION-GAPS.md` (ไม่มี timeline) |
+| G5 | ไม่มี managed Postgres / vector / object storage จริง, ไม่มี restore drill → durable data + restore drill | blocked | owner | `PRODUCTION-GAPS.md` (blocks: staging provision G4) |
+| G6 | production ยังไม่มี gate แยก → digest + verified signature + enforced admission | blocked | owner | `infra/platform/iac/envs/production/README.md`; blocked โดย G1–G4 |
+
 ## Open questions
 
 - ไม่มีวันที่หรือ owner decision ว่าจะเริ่ม staging เมื่อไร (PRODUCTION-GAPS ไม่ระบุ timeline)
-- PR #1 "Add reproducible shared-service delivery and bounded staging validation" ยังเปิดอยู่และไม่อยู่ใน `main` (PRODUCT.md Limits) — เป็นส่วนหนึ่งของ To-Be หรือไม่
+- PR #1 "Add reproducible shared-service delivery and bounded staging validation" ถูกปิดโดยไม่ merge เมื่อ 2026-11-04 (ตรวจจาก GitHub) แต่ `PRODUCT.md` Limits ยังเขียนว่าเปิดอยู่ — ต้องแก้ PRODUCT.md หรือเปิดใหม่ถ้ายังต้องการงานนี้ [ต้องยืนยัน]
